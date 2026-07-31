@@ -22,11 +22,15 @@ from src.utils.cache import TTLCache
 
 _MEMBER_STATUSES = {"member", "administrator", "creator"}
 
-# Telegram membership checks are a network round-trip per channel per user.
-# Caching a short-TTL "is a member" result keeps the force-sub gate (checked
-# on every /start AND every code request, per spec) fast for the very common
-# case of a user who checks their subscription repeatedly in a short burst.
-_membership_cache: TTLCache[str, bool] = TTLCache(ttl_seconds=30, max_size=20000)
+# Only the non-Telegram ("Tasdiqlash"-confirmed) targets are cached here.
+# Real Telegram channels/groups are ALWAYS re-checked live against
+# get_chat_member -- caching that result previously let a user who left a
+# mandatory channel keep bypassing the gate for up to the cache's TTL, which
+# defeats the whole point of a mandatory-subscription check. Confirmation
+# taps for external platforms can't be verified live at all, so caching
+# those (to save a DB round trip per channel per check) is safe: nothing
+# ever needs to *revoke* a confirmation behind the user's back.
+_confirmation_cache: TTLCache[str, bool] = TTLCache(ttl_seconds=30, max_size=20000)
 
 
 class ForceSubService:
@@ -131,32 +135,37 @@ class ForceSubService:
     async def confirm_external(self, user_id: int, channel_id: int) -> None:
         """Record a user's manual "Tasdiqlash" tap for a non-Telegram channel."""
         await self._confirmations.confirm(user_id, channel_id)
-        _membership_cache.invalidate(f"{user_id}:{channel_id}")
+        _confirmation_cache.invalidate(f"{user_id}:{channel_id}")
 
     async def _is_member(self, bot: Bot, channel: ForceSubChannel, telegram_id: int) -> bool:
-        """Resolve membership for one channel, via cache -> Telegram API/confirmation."""
-        cache_key = f"{telegram_id}:{channel.id}"
-        cached = _membership_cache.get(cache_key)
-        if cached is not None:
-            return cached
+        """Resolve membership for one channel.
 
+        Real Telegram channels/groups/discussion-groups are always checked
+        live via ``get_chat_member`` -- never cached -- so a user who leaves
+        right after passing the gate is caught on their very next action
+        (next /start, next code request, next "Tekshirish" tap), not only
+        after some caching window expires. Non-Telegram platforms have no
+        API to check live at all, so they still rely on (and cache) the
+        user's own manual "Tasdiqlash" confirmation.
+        """
         if channel.platform in TELEGRAM_AUTO_VERIFIABLE_PLATFORMS:
             try:
                 member = await bot.get_chat_member(chat_id=channel.chat_id, user_id=telegram_id)
-                is_member = member.status in _MEMBER_STATUSES
+                return member.status in _MEMBER_STATUSES
             except TelegramAPIError:
                 # Fail closed: an unreachable/misconfigured channel must not
                 # silently disable the force-subscribe gate.
-                is_member = False
-        elif channel.platform == ForceSubPlatform.TELEGRAM_BOT:
-            # A "start the bot" requirement cannot be checked via get_chat_member;
-            # treat it the same as an external platform (manual confirmation).
-            is_member = await self._confirmations.has_confirmed(telegram_id, channel.id)
-        else:
-            is_member = await self._confirmations.has_confirmed(telegram_id, channel.id)
+                return False
 
-        _membership_cache.set(cache_key, is_member)
-        return is_member
+        # TELEGRAM_BOT ("start the bot") and every external platform can only
+        # be verified through the user's own confirmation tap.
+        cache_key = f"{telegram_id}:{channel.id}"
+        cached = _confirmation_cache.get(cache_key)
+        if cached is not None:
+            return cached
+        is_confirmed = await self._confirmations.has_confirmed(telegram_id, channel.id)
+        _confirmation_cache.set(cache_key, is_confirmed)
+        return is_confirmed
 
     async def get_missing_channels(
         self, bot: Bot, telegram_id: int, *, mandatory_only: bool = True
@@ -164,8 +173,10 @@ class ForceSubService:
         """Return the subscription targets ``telegram_id`` has not completed yet.
 
         Checked on every /start and every code request, per spec. Telegram
-        membership is verified live (through a short cache); non-Telegram
-        platforms rely on the user's own "Tasdiqlash" confirmation.
+        membership is always verified live (never cached), so a user who
+        leaves a mandatory channel is caught immediately on their next
+        action; non-Telegram platforms rely on the user's own "Tasdiqlash"
+        confirmation.
         """
         channels = await self.list_active()
         if mandatory_only:
