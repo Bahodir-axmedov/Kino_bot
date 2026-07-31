@@ -4,25 +4,43 @@ from __future__ import annotations
 
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Animation, Audio, CallbackQuery, Document, Message, PhotoSize, Video
+from aiogram.types import (
+    Animation,
+    Audio,
+    CallbackQuery,
+    Document,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    Message,
+    PhotoSize,
+    Video,
+)
 
 from src.core.plugin import register_admin_plugin
-from src.keyboards.callback_data import AdminMenuCallback, MovieActionCallback
+from src.keyboards.callback_data import AdminMenuCallback, MovieActionCallback, PaginationCallback
 from src.keyboards.inline.admin_panel import build_back_to_admin_menu_keyboard
-from src.keyboards.inline.movie import build_movie_admin_actions_keyboard, build_movie_delete_confirm_keyboard
+from src.keyboards.inline.movie import (
+    build_movie_admin_actions_keyboard,
+    build_movie_delete_confirm_keyboard,
+    build_movie_edit_field_keyboard,
+)
+from src.keyboards.inline.pagination import build_pagination_row
 from src.models.movie import MediaType
 from src.services.log_service import LogService
 from src.services.movie_service import MovieService
 from src.states.movie_states import (
+    AdminSearchMovieStates,
     BulkUploadStates,
     EditCaptionStates,
     EditCodeStates,
+    EditMovieFieldStates,
     MovieFormStates,
-    SearchMovieStates,
 )
 from src.utils.exceptions import MovieCodeAlreadyExistsError, MovieNotFoundError
 from src.utils.formatters import format_movie_caption
 from src.utils.validators import normalize_movie_code, validate_non_empty_text
+
+_MOVIE_LIST_PAGE_SIZE = 8
 
 router = Router(name="admin.movie_management")
 
@@ -161,13 +179,13 @@ async def receive_description_and_save(
 @router.callback_query(AdminMenuCallback.filter(F.section == "movie_search"))
 async def start_movie_search(callback: CallbackQuery, state: FSMContext) -> None:
     """Begin an admin full-catalogue search (including inactive movies)."""
-    await state.set_state(SearchMovieStates.waiting_for_query)
+    await state.set_state(AdminSearchMovieStates.waiting_for_query)
     if isinstance(callback.message, Message):
         await callback.message.edit_text("🔍 Qidiruv so'zini yuboring (nom/janr):")
     await callback.answer()
 
 
-@router.message(SearchMovieStates.waiting_for_query, F.text)
+@router.message(AdminSearchMovieStates.waiting_for_query, F.text)
 async def run_admin_search(
     message: Message, state: FSMContext, movie_service: MovieService
 ) -> None:
@@ -255,6 +273,209 @@ async def toggle_active(
             format_movie_caption(movie), reply_markup=build_movie_admin_actions_keyboard(movie)
         )
     await callback.answer("✅ Yangilandi.")
+
+
+_EDIT_FIELD_BY_ACTION: dict[str, str] = {
+    "edit_title": "title",
+    "edit_year": "year",
+    "edit_genre": "genre",
+    "edit_description": "description",
+    "edit_code": "code",
+}
+
+_EDIT_FIELD_PROMPTS: dict[str, str] = {
+    "edit_title": "📝 Yangi nomni yuboring:",
+    "edit_year": "📅 Yangi yilni yuboring (yoki /skip):",
+    "edit_genre": "🎭 Yangi janrni yuboring:",
+    "edit_description": "📄 Yangi tavsifni yuboring:",
+    "edit_code": "🔑 Yangi kodni yuboring:",
+}
+
+
+@router.callback_query(MovieActionCallback.filter(F.action == "edit"))
+async def open_edit_menu(
+    callback: CallbackQuery, callback_data: MovieActionCallback, movie_service: MovieService
+) -> None:
+    """Show the field picker after tapping "✏️ Tahrirlash" on a movie."""
+    movie = await movie_service.get_by_id(callback_data.movie_id)
+    if isinstance(callback.message, Message):
+        await callback.message.edit_text(
+            f"✏️ <b>{movie.title}</b> — qaysi maydonni tahrirlaysiz?",
+            reply_markup=build_movie_edit_field_keyboard(movie.id),
+        )
+    await callback.answer()
+
+
+@router.callback_query(MovieActionCallback.filter(F.action == "edit_cancel"))
+async def cancel_edit_menu(
+    callback: CallbackQuery, callback_data: MovieActionCallback, movie_service: MovieService
+) -> None:
+    """Cancel the field picker and restore the movie action menu."""
+    movie = await movie_service.get_by_id(callback_data.movie_id)
+    if isinstance(callback.message, Message):
+        await callback.message.edit_text(
+            format_movie_caption(movie), reply_markup=build_movie_admin_actions_keyboard(movie)
+        )
+    await callback.answer("Bekor qilindi.")
+
+
+@router.callback_query(MovieActionCallback.filter(F.action.in_(set(_EDIT_FIELD_BY_ACTION))))
+async def prompt_edit_field(
+    callback: CallbackQuery, callback_data: MovieActionCallback, state: FSMContext
+) -> None:
+    """Ask for the new value of a single movie field (including its code)."""
+    await state.set_state(EditMovieFieldStates.waiting_for_new_value)
+    await state.update_data(
+        movie_id=callback_data.movie_id, field=_EDIT_FIELD_BY_ACTION[callback_data.action]
+    )
+    if isinstance(callback.message, Message):
+        await callback.message.edit_text(_EDIT_FIELD_PROMPTS[callback_data.action])
+    await callback.answer()
+
+
+@router.message(EditMovieFieldStates.waiting_for_new_value, F.text)
+async def apply_field_edit(
+    message: Message, state: FSMContext, movie_service: MovieService, log_service: LogService
+) -> None:
+    """Apply the new value to the chosen field (title/year/genre/description/code)."""
+    data = await state.get_data()
+    await state.clear()
+    movie_id = data["movie_id"]
+    field = data["field"]
+    raw_value = message.text.strip() if message.text else ""
+
+    if field == "code":
+        try:
+            movie = await movie_service.get_by_id(movie_id)
+            movie = await movie_service.replace_code(movie.code, normalize_movie_code(raw_value))
+        except (MovieNotFoundError, MovieCodeAlreadyExistsError) as error:
+            await message.answer(f"❌ {error}")
+            return
+        await log_service.record(
+            actor_id=message.from_user.id if message.from_user else 0,
+            actor_role="admin",
+            action="movie_code_replaced",
+            entity_type="movie",
+            entity_id=movie.code,
+            new_value={"code": movie.code},
+        )
+        await message.answer(
+            f"✅ Kod yangilandi!\n\n{format_movie_caption(movie)}",
+            reply_markup=build_movie_admin_actions_keyboard(movie),
+        )
+        return
+
+    if field == "year":
+        if raw_value and raw_value != "/skip" and not raw_value.isdigit():
+            await message.answer("❌ Yil raqam bo'lishi kerak. Qaytadan urinib ko'ring.")
+            return
+        value: object = int(raw_value) if raw_value and raw_value != "/skip" else None
+    else:
+        value = raw_value or None
+
+    try:
+        movie = await movie_service.update_fields(movie_id, **{field: value})
+    except MovieNotFoundError as error:
+        await message.answer(f"❌ {error}")
+        return
+
+    await log_service.record(
+        actor_id=message.from_user.id if message.from_user else 0,
+        actor_role="admin",
+        action="movie_field_edited",
+        entity_type="movie",
+        entity_id=movie.code,
+        new_value={field: value},
+    )
+    await message.answer(
+        f"✅ Yangilandi!\n\n{format_movie_caption(movie)}",
+        reply_markup=build_movie_admin_actions_keyboard(movie),
+    )
+
+
+async def _render_movie_list_page(
+    movie_service: MovieService, page: int
+) -> tuple[str, InlineKeyboardMarkup]:
+    """Build the text + keyboard for one page of the full movie catalogue."""
+    offset = page * _MOVIE_LIST_PAGE_SIZE
+    movies = await movie_service.search(
+        include_inactive=True, limit=_MOVIE_LIST_PAGE_SIZE + 1, offset=offset
+    )
+    has_next = len(movies) > _MOVIE_LIST_PAGE_SIZE
+    movies = movies[:_MOVIE_LIST_PAGE_SIZE]
+    back_button = InlineKeyboardButton(
+        text="⬅️ Orqaga", callback_data=AdminMenuCallback(section="movies").pack()
+    )
+
+    if not movies:
+        text = (
+            "📋 Hozircha bironta kino yuklanmagan."
+            if page == 0
+            else "📋 Boshqa kino yo'q."
+        )
+        keyboard_rows: list[list[InlineKeyboardButton]] = []
+        pagination_row = build_pagination_row("movie_list", page, has_next=False)
+        if pagination_row:
+            keyboard_rows.append(pagination_row)
+        keyboard_rows.append([back_button])
+        return text, InlineKeyboardMarkup(inline_keyboard=keyboard_rows)
+
+    total = await movie_service.count_all(include_inactive=True)
+    lines = [f"📋 <b>Barcha kinolar</b> ({total} ta, {page + 1}-sahifa)"]
+    keyboard_rows = []
+    for movie in movies:
+        status = "✅" if movie.is_active else "🚫"
+        lines.append(f"{status} <code>{movie.code}</code> — {movie.title}")
+        keyboard_rows.append(
+            [
+                InlineKeyboardButton(
+                    text=f"🔧 {movie.code}",
+                    callback_data=MovieActionCallback(action="view", movie_id=movie.id).pack(),
+                )
+            ]
+        )
+    pagination_row = build_pagination_row("movie_list", page, has_next)
+    if pagination_row:
+        keyboard_rows.append(pagination_row)
+    keyboard_rows.append([back_button])
+    return "\n".join(lines), InlineKeyboardMarkup(inline_keyboard=keyboard_rows)
+
+
+@router.callback_query(AdminMenuCallback.filter(F.section == "movie_list"))
+async def open_movie_list(callback: CallbackQuery, movie_service: MovieService) -> None:
+    """Show every uploaded movie (code + title), newest first, with actions."""
+    text, keyboard = await _render_movie_list_page(movie_service, 0)
+    if isinstance(callback.message, Message):
+        await callback.message.edit_text(text, reply_markup=keyboard)
+    await callback.answer()
+
+
+@router.callback_query(PaginationCallback.filter(F.scope == "movie_list"))
+async def paginate_movie_list(
+    callback: CallbackQuery, callback_data: PaginationCallback, movie_service: MovieService
+) -> None:
+    """Move to another page of the full movie list."""
+    text, keyboard = await _render_movie_list_page(movie_service, callback_data.index)
+    if isinstance(callback.message, Message):
+        await callback.message.edit_text(text, reply_markup=keyboard)
+    await callback.answer()
+
+
+@router.callback_query(MovieActionCallback.filter(F.action == "view"))
+async def view_movie(
+    callback: CallbackQuery, callback_data: MovieActionCallback, movie_service: MovieService
+) -> None:
+    """Open one movie's full action menu (edit/delete/toggle) from the list."""
+    try:
+        movie = await movie_service.get_by_id(callback_data.movie_id)
+    except MovieNotFoundError as error:
+        await callback.answer(str(error), show_alert=True)
+        return
+    if isinstance(callback.message, Message):
+        await callback.message.answer(
+            format_movie_caption(movie), reply_markup=build_movie_admin_actions_keyboard(movie)
+        )
+    await callback.answer()
 
 
 @router.callback_query(AdminMenuCallback.filter(F.section == "movie_edit_code"))

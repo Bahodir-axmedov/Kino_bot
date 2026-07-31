@@ -256,6 +256,12 @@ def build_movies_menu_keyboard() -> InlineKeyboardMarkup:
         ],
         [
             InlineKeyboardButton(
+                text="📋 Barcha kinolar",
+                callback_data=AdminMenuCallback(section="movie_list").pack(),
+            ),
+        ],
+        [
+            InlineKeyboardButton(
                 text="✏️ Kod almashtirish",
                 callback_data=AdminMenuCallback(section="movie_edit_code").pack(),
             ),

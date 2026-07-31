@@ -56,6 +56,12 @@ def build_movie_edit_field_keyboard(movie_id: int) -> InlineKeyboardMarkup:
         ],
         [
             InlineKeyboardButton(
+                text="🔑 Kodi",
+                callback_data=MovieActionCallback(action="edit_code", movie_id=movie_id).pack(),
+            )
+        ],
+        [
+            InlineKeyboardButton(
                 text="⬅️ Bekor qilish",
                 callback_data=MovieActionCallback(action="edit_cancel", movie_id=movie_id).pack(),
             )

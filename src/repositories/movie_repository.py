@@ -91,6 +91,35 @@ class MovieRepository(BaseRepository[Movie]):
         result = await self._session.execute(statement)
         return result.scalars().all()
 
+    async def least_by_views(self, limit: int = 10) -> Sequence[Movie]:
+        """Return the least-viewed movies, ascending -- for the Media Center."""
+        statement = select(Movie).order_by(Movie.views_count.asc()).limit(limit)
+        result = await self._session.execute(statement)
+        return result.scalars().all()
+
+    async def list_broken(self, limit: int = 50) -> Sequence[Movie]:
+        """Return movies currently flagged as broken (failed file verification)."""
+        statement = (
+            select(Movie)
+            .where(Movie.is_broken.is_(True))
+            .order_by(Movie.last_verified_at.desc().nullslast())
+            .limit(limit)
+        )
+        result = await self._session.execute(statement)
+        return result.scalars().all()
+
+    async def max_numeric_code(self) -> int:
+        """Return the highest existing purely-numeric code, or 0 if none.
+
+        Codes may in principle contain non-numeric characters (e.g. manually
+        typed custom codes), so this filters in Python rather than trusting
+        every stored value to be castable to an integer at the SQL layer.
+        """
+        statement = select(Movie.code)
+        result = await self._session.execute(statement)
+        numeric_codes = [int(code) for code in result.scalars().all() if code.isdigit()]
+        return max(numeric_codes, default=0)
+
     async def increment_views(self, movie: Movie) -> None:
         """Atomically increment the view counter for a movie."""
         movie.views_count += 1
