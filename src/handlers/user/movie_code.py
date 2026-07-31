@@ -123,7 +123,9 @@ async def _maybe_send_ad(bot: Bot, chat_id: int, campaign: AdCampaign | None) ->
 
 
 async def _try_deliver(
-    message: Message,
+    bot: Bot,
+    chat_id: int,
+    user_id: int,
     code: str,
     movie_service: MovieService,
     user_service: UserService,
@@ -142,16 +144,22 @@ async def _try_deliver(
     bo'lmagan foydalanuvchi hech qanday funksiyadan foydalana olmasin").
     Every attempt -- found or not -- is recorded to the Search History
     Center once the force-sub gate has been cleared.
-    """
-    if message.from_user is None or message.bot is None:
-        return
 
-    missing_channels = await force_sub_service.get_missing_channels(
-        message.bot, message.from_user.id
-    )
+    Takes an explicit ``user_id``/``chat_id`` (never derived from a
+    ``Message.from_user``) because the gate-recheck callback path only has
+    access to the bot's *own* previously-sent gate message -- that
+    message's ``from_user`` is the bot itself, not the human who tapped the
+    button. Deriving the id from it there previously made the force-sub
+    check always evaluate the bot's own membership (which is always true,
+    since the bot must be an admin/member of every managed channel),
+    silently letting every real user through the "Tekshirish" button
+    regardless of whether they had actually subscribed.
+    """
+    missing_channels = await force_sub_service.get_missing_channels(bot, user_id)
     if missing_channels:
-        await message.answer(
-            format_force_sub_gate_message(missing_channels),
+        await bot.send_message(
+            chat_id=chat_id,
+            text=format_force_sub_gate_message(missing_channels),
             reply_markup=build_force_sub_gate_keyboard(missing_channels, code),
         )
         return
@@ -159,10 +167,10 @@ async def _try_deliver(
     try:
         movie = await movie_service.get_by_code(code)
     except MovieNotFoundError:
-        await search_log_service.record(query_text=code, found=False, user_id=message.from_user.id)
+        await search_log_service.record(query_text=code, found=False, user_id=user_id)
         raise
 
-    is_admin = await admin_service.is_admin(message.from_user.id)
+    is_admin = await admin_service.is_admin(user_id)
     try:
         movie_service.assert_visible_to(
             movie,
@@ -172,15 +180,15 @@ async def _try_deliver(
             is_premium=bool(db_user and db_user.is_premium),
         )
     except VisibilityDeniedError:
-        await search_log_service.record(query_text=code, found=False, user_id=message.from_user.id)
+        await search_log_service.record(query_text=code, found=False, user_id=user_id)
         raise
 
-    await search_log_service.record(query_text=code, found=True, user_id=message.from_user.id)
-    await _deliver_movie(message.bot, message.chat.id, movie, settings_service=settings_service)
+    await search_log_service.record(query_text=code, found=True, user_id=user_id)
+    await _deliver_movie(bot, chat_id, movie, settings_service=settings_service)
     await movie_service.register_delivery(movie)
-    await user_service.increment_movies_received(message.from_user.id)
+    await user_service.increment_movies_received(user_id)
     await log_service.record(
-        actor_id=message.from_user.id,
+        actor_id=user_id,
         actor_role="user",
         action="movie_delivered",
         entity_type="movie",
@@ -189,7 +197,7 @@ async def _try_deliver(
 
     search_count = db_user.searches_count if db_user is not None else 0
     campaign = await ad_service.pick_campaign_for_search_count(search_count)
-    await _maybe_send_ad(message.bot, message.chat.id, campaign)
+    await _maybe_send_ad(bot, chat_id, campaign)
 
 
 @router.message(MovieCodeFilter())
@@ -212,12 +220,17 @@ async def handle_movie_code(
     if db_user is not None:
         await user_service.assert_not_restricted(db_user)
 
+    if message.bot is None:
+        return
+
     code = normalize_movie_code(message.text)
     await user_service.increment_search_count(message.from_user.id)
 
     try:
         await _try_deliver(
-            message,
+            message.bot,
+            message.chat.id,
+            message.from_user.id,
             code,
             movie_service,
             user_service,
@@ -278,7 +291,9 @@ async def handle_force_sub_recheck(
 
     try:
         await _try_deliver(
-            callback.message,
+            callback.bot,
+            callback.message.chat.id,
+            callback.from_user.id,
             callback_data.movie_code,
             movie_service,
             user_service,

@@ -28,99 +28,204 @@ from src.models.whitelist_entry import WhitelistEntryType
 
 
 def build_admin_main_menu_keyboard() -> InlineKeyboardMarkup:
-    """Return the top-level admin panel menu."""
+    """Return the top-level admin panel menu.
+
+    The panel has ~20 distinct sections. Showing all of them at once as a
+    flat grid made the panel confusing to navigate ("juda noqulay"), so the
+    home screen only shows five clearly-labelled categories; each opens a
+    short submenu with the actual sections. This keeps every existing
+    section's callback ``section=`` value unchanged, so nothing else in the
+    codebase needs to change to benefit from the clearer layout.
+    """
     rows = [
         [
             InlineKeyboardButton(
-                text="🎬 Kino boshqaruvi",
-                callback_data=AdminMenuCallback(section="movies").pack(),
-            ),
-            InlineKeyboardButton(
-                text="👥 Foydalanuvchilar",
-                callback_data=AdminMenuCallback(section="users").pack(),
-            ),
+                text="🎬 Kontent boshqaruvi",
+                callback_data=AdminMenuCallback(section="cat_content").pack(),
+            )
         ],
         [
             InlineKeyboardButton(
-                text="📢 Broadcast",
-                callback_data=AdminMenuCallback(section="broadcast").pack(),
-            ),
-            InlineKeyboardButton(
-                text="🔐 Majburiy obuna",
-                callback_data=AdminMenuCallback(section="force_sub").pack(),
-            ),
+                text="👥 Foydalanuvchilar va adminlar",
+                callback_data=AdminMenuCallback(section="cat_users").pack(),
+            )
         ],
         [
             InlineKeyboardButton(
-                text="📊 Statistika", callback_data=AdminMenuCallback(section="stats").pack()
-            ),
-            InlineKeyboardButton(
-                text="💾 Backup / Restore",
-                callback_data=AdminMenuCallback(section="backup").pack(),
-            ),
+                text="📢 Marketing va obuna",
+                callback_data=AdminMenuCallback(section="cat_marketing").pack(),
+            )
         ],
         [
             InlineKeyboardButton(
-                text="🛡 Adminlar", callback_data=AdminMenuCallback(section="admins").pack()
-            ),
-            InlineKeyboardButton(
-                text="⚙️ Sozlamalar", callback_data=AdminMenuCallback(section="settings").pack()
-            ),
+                text="📊 Monitoring va statistika",
+                callback_data=AdminMenuCallback(section="cat_monitoring").pack(),
+            )
         ],
         [
             InlineKeyboardButton(
-                text="📈 Dashboard", callback_data=AdminMenuCallback(section="dashboard").pack()
-            ),
-            InlineKeyboardButton(
-                text="🎞 Media Center",
-                callback_data=AdminMenuCallback(section="media_center").pack(),
-            ),
-        ],
-        [
-            InlineKeyboardButton(
-                text="🗂 Collections",
-                callback_data=AdminMenuCallback(section="media_collections").pack(),
-            ),
-            InlineKeyboardButton(
-                text="⛔ Blacklist", callback_data=AdminMenuCallback(section="blacklist").pack()
-            ),
-        ],
-        [
-            InlineKeyboardButton(
-                text="✅ Whitelist", callback_data=AdminMenuCallback(section="whitelist").pack()
-            ),
-            InlineKeyboardButton(
-                text="📣 Reklama", callback_data=AdminMenuCallback(section="ads").pack()
-            ),
-        ],
-        [
-            InlineKeyboardButton(
-                text="🛡 Xavfsizlik", callback_data=AdminMenuCallback(section="security").pack()
-            ),
-            InlineKeyboardButton(
-                text="🗄 Loglar", callback_data=AdminMenuCallback(section="logs").pack()
-            ),
-        ],
-        [
-            InlineKeyboardButton(
-                text="🎞 Media manbalari",
-                callback_data=AdminMenuCallback(section="media_sources").pack(),
-            ),
-            InlineKeyboardButton(
-                text="💽 Database", callback_data=AdminMenuCallback(section="database").pack()
-            ),
-        ],
-        [
-            InlineKeyboardButton(
-                text="💎 Premium",
-                callback_data=AdminMenuCallback(section="premium_center").pack(),
-            ),
-            InlineKeyboardButton(
-                text="📄 Docs", callback_data=AdminMenuCallback(section="docs").pack()
-            ),
+                text="🛠 Tizim va xavfsizlik",
+                callback_data=AdminMenuCallback(section="cat_system").pack(),
+            )
         ],
     ]
     return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def _category_submenu_keyboard(rows: list[list[InlineKeyboardButton]]) -> InlineKeyboardMarkup:
+    """Append a shared "back to categories" row to a category submenu."""
+    rows = [*rows, [
+        InlineKeyboardButton(
+            text="⬅️ Bo'limlar", callback_data=AdminMenuCallback(section="root").pack()
+        )
+    ]]
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def build_admin_category_content_keyboard() -> InlineKeyboardMarkup:
+    """Return the "Kontent boshqaruvi" category submenu."""
+    return _category_submenu_keyboard(
+        [
+            [
+                InlineKeyboardButton(
+                    text="🎬 Kino boshqaruvi", callback_data=AdminMenuCallback(section="movies").pack()
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🎞 Media Center",
+                    callback_data=AdminMenuCallback(section="media_center").pack(),
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🗂 Collections",
+                    callback_data=AdminMenuCallback(section="media_collections").pack(),
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🎞 Media manbalari",
+                    callback_data=AdminMenuCallback(section="media_sources").pack(),
+                )
+            ],
+        ]
+    )
+
+
+def build_admin_category_users_keyboard() -> InlineKeyboardMarkup:
+    """Return the "Foydalanuvchilar va adminlar" category submenu."""
+    return _category_submenu_keyboard(
+        [
+            [
+                InlineKeyboardButton(
+                    text="👥 Foydalanuvchilar", callback_data=AdminMenuCallback(section="users").pack()
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🛡 Adminlar", callback_data=AdminMenuCallback(section="admins").pack()
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="⛔ Blacklist", callback_data=AdminMenuCallback(section="blacklist").pack()
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="✅ Whitelist", callback_data=AdminMenuCallback(section="whitelist").pack()
+                )
+            ],
+        ]
+    )
+
+
+def build_admin_category_marketing_keyboard() -> InlineKeyboardMarkup:
+    """Return the "Marketing va obuna" category submenu."""
+    return _category_submenu_keyboard(
+        [
+            [
+                InlineKeyboardButton(
+                    text="📢 Broadcast", callback_data=AdminMenuCallback(section="broadcast").pack()
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="📣 Reklama", callback_data=AdminMenuCallback(section="ads").pack()
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🔐 Majburiy obuna",
+                    callback_data=AdminMenuCallback(section="force_sub").pack(),
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="💎 Premium",
+                    callback_data=AdminMenuCallback(section="premium_center").pack(),
+                )
+            ],
+        ]
+    )
+
+
+def build_admin_category_monitoring_keyboard() -> InlineKeyboardMarkup:
+    """Return the "Monitoring va statistika" category submenu."""
+    return _category_submenu_keyboard(
+        [
+            [
+                InlineKeyboardButton(
+                    text="📊 Statistika", callback_data=AdminMenuCallback(section="stats").pack()
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="📈 Dashboard", callback_data=AdminMenuCallback(section="dashboard").pack()
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🗄 Loglar", callback_data=AdminMenuCallback(section="logs").pack()
+                )
+            ],
+        ]
+    )
+
+
+def build_admin_category_system_keyboard() -> InlineKeyboardMarkup:
+    """Return the "Tizim va xavfsizlik" category submenu."""
+    return _category_submenu_keyboard(
+        [
+            [
+                InlineKeyboardButton(
+                    text="⚙️ Sozlamalar", callback_data=AdminMenuCallback(section="settings").pack()
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🛡 Xavfsizlik", callback_data=AdminMenuCallback(section="security").pack()
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="💾 Backup / Restore",
+                    callback_data=AdminMenuCallback(section="backup").pack(),
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="💽 Database", callback_data=AdminMenuCallback(section="database").pack()
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="📄 Docs", callback_data=AdminMenuCallback(section="docs").pack()
+                )
+            ],
+        ]
+    )
 
 
 def build_back_to_admin_menu_keyboard() -> InlineKeyboardMarkup:

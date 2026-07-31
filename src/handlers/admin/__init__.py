@@ -45,6 +45,11 @@ from src.handlers.admin import (  # noqa: F401
 )
 from src.keyboards.callback_data import AdminMenuCallback
 from src.keyboards.inline.admin_panel import (
+    build_admin_category_content_keyboard,
+    build_admin_category_marketing_keyboard,
+    build_admin_category_monitoring_keyboard,
+    build_admin_category_system_keyboard,
+    build_admin_category_users_keyboard,
     build_admin_main_menu_keyboard,
     build_movies_menu_keyboard,
 )
@@ -70,10 +75,66 @@ async def open_admin_panel(
 
 @root_router.callback_query(AdminMenuCallback.filter(F.section == "root"))
 async def back_to_admin_root(callback: CallbackQuery) -> None:
-    """Return to the top-level admin panel menu."""
+    """Return to the top-level admin panel menu (the category list)."""
     if isinstance(callback.message, Message):
         await callback.message.edit_text(
-            "\U0001F6E0 <b>Admin panel</b>", reply_markup=build_admin_main_menu_keyboard()
+            "\U0001F6E0 <b>Admin panel</b>\n\nKerakli bo'limni tanlang:",
+            reply_markup=build_admin_main_menu_keyboard(),
+        )
+    await callback.answer()
+
+
+@root_router.callback_query(AdminMenuCallback.filter(F.section == "cat_content"))
+async def open_category_content(callback: CallbackQuery) -> None:
+    """Show the "Kontent boshqaruvi" category submenu."""
+    if isinstance(callback.message, Message):
+        await callback.message.edit_text(
+            "\U0001F3AC <b>Kontent boshqaruvi</b>\n\nKerakli bo'limni tanlang:",
+            reply_markup=build_admin_category_content_keyboard(),
+        )
+    await callback.answer()
+
+
+@root_router.callback_query(AdminMenuCallback.filter(F.section == "cat_users"))
+async def open_category_users(callback: CallbackQuery) -> None:
+    """Show the "Foydalanuvchilar va adminlar" category submenu."""
+    if isinstance(callback.message, Message):
+        await callback.message.edit_text(
+            "\U0001F465 <b>Foydalanuvchilar va adminlar</b>\n\nKerakli bo'limni tanlang:",
+            reply_markup=build_admin_category_users_keyboard(),
+        )
+    await callback.answer()
+
+
+@root_router.callback_query(AdminMenuCallback.filter(F.section == "cat_marketing"))
+async def open_category_marketing(callback: CallbackQuery) -> None:
+    """Show the "Marketing va obuna" category submenu."""
+    if isinstance(callback.message, Message):
+        await callback.message.edit_text(
+            "\U0001F4E2 <b>Marketing va obuna</b>\n\nKerakli bo'limni tanlang:",
+            reply_markup=build_admin_category_marketing_keyboard(),
+        )
+    await callback.answer()
+
+
+@root_router.callback_query(AdminMenuCallback.filter(F.section == "cat_monitoring"))
+async def open_category_monitoring(callback: CallbackQuery) -> None:
+    """Show the "Monitoring va statistika" category submenu."""
+    if isinstance(callback.message, Message):
+        await callback.message.edit_text(
+            "\U0001F4CA <b>Monitoring va statistika</b>\n\nKerakli bo'limni tanlang:",
+            reply_markup=build_admin_category_monitoring_keyboard(),
+        )
+    await callback.answer()
+
+
+@root_router.callback_query(AdminMenuCallback.filter(F.section == "cat_system"))
+async def open_category_system(callback: CallbackQuery) -> None:
+    """Show the "Tizim va xavfsizlik" category submenu."""
+    if isinstance(callback.message, Message):
+        await callback.message.edit_text(
+            "\U0001F6E0 <b>Tizim va xavfsizlik</b>\n\nKerakli bo'limni tanlang:",
+            reply_markup=build_admin_category_system_keyboard(),
         )
     await callback.answer()
 
