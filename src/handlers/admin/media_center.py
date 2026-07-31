@@ -29,9 +29,6 @@ async def open_media_center(
     callback: CallbackQuery, movie_service: MovieService, state: FSMContext
 ) -> None:
     """Show the Media Center overview: totals, top, least-used, broken."""
-    # Arm the preview state so a code typed right after this screen is shown
-    # (as the on-screen instructions ask for) is actually caught and previewed.
-    await state.set_state(MediaCenterStates.waiting_for_preview_code)
     total = await movie_service.count_all(include_inactive=True)
     top = await movie_service.top_by_views(limit=5)
     least = await movie_service.least_by_views(limit=5)
@@ -52,6 +49,7 @@ async def open_media_center(
         "/release &lt;kod&gt; — kodni bo'shatish\n"
         "/export_media — to'liq katalogni CSV qilib olish"
     )
+    await state.set_state(MediaCenterStates.waiting_for_preview_code)
     if isinstance(callback.message, Message):
         await callback.message.edit_text(text, reply_markup=build_back_to_admin_menu_keyboard())
         await callback.message.answer("Preview uchun kodni yuboring:")

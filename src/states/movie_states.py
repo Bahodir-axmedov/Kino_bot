@@ -34,12 +34,6 @@ class EditCaptionStates(StatesGroup):
     waiting_for_new_caption = State()
 
 
-class EditMovieFieldStates(StatesGroup):
-    """Edit a single field (title/year/genre/description) via the movie's own admin actions menu."""
-
-    waiting_for_new_value = State()
-
-
 class BulkUploadStates(StatesGroup):
     """Accept a stream of media messages and auto-index each one."""
 
@@ -47,15 +41,37 @@ class BulkUploadStates(StatesGroup):
 
 
 class SearchMovieStates(StatesGroup):
-    """Free-text admin/user movie search."""
+    """Free-text user-facing movie search (title/genre)."""
 
     waiting_for_query = State()
+
+
+class AdminSearchMovieStates(StatesGroup):
+    """Free-text admin full-catalogue search (title/genre, including inactive).
+
+    Kept separate from ``SearchMovieStates`` (used by the plain user-facing
+    "\U0001F50D Kino qidirish" flow) so an admin who taps that same ordinary
+    button never gets routed into the admin-only search handler -- which
+    shows management (edit/delete) buttons -- instead of the plain
+    user-facing result list everyone else sees.
+    """
+
+    waiting_for_query = State()
+
+
+class EditMovieFieldStates(StatesGroup):
+    """Edit a single field (title/year/genre/description) of an existing movie."""
+
+    waiting_for_new_value = State()
 
 
 class MediaQueueStates(StatesGroup):
     """Media Queue: media was auto-captured in a group, now waiting for its code."""
 
     waiting_for_code = State()
+    # Code accepted; waiting for the admin to edit the media's caption with
+    # details (or leave it untouched) and press the "Tasdiqlash" button.
+    confirming_details = State()
 
 
 class CodeManagementStates(StatesGroup):

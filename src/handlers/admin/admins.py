@@ -6,10 +6,10 @@ from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
-from src.config import Settings
-from src.core.plugin import register_admin_plugin
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
+from src.config import Settings
+from src.core.plugin import register_admin_plugin
 from src.filters.owner_filter import IsOwnerFilter
 from src.keyboards.callback_data import AdminMenuCallback, AdminRemoveCallback
 from src.models.admin import AdminRole

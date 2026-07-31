@@ -10,12 +10,10 @@ from aiogram.types import Message
 from src.core.plugin import register_user_plugin
 from src.keyboards.inline.force_sub import build_force_sub_gate_keyboard
 from src.keyboards.reply.main_menu import build_main_menu_keyboard
-from src.models.user import User
 from src.services.admin_service import AdminService
 from src.services.blacklist_service import BlacklistService
 from src.services.force_sub_service import ForceSubService
 from src.services.log_service import LogService
-from src.services.referral_reward_service import ReferralRewardService
 from src.services.settings_service import SettingsService
 from src.services.user_service import UserService
 from src.utils.formatters import format_force_sub_gate_message
@@ -46,12 +44,6 @@ async def handle_start(
     Maintenance Mode and Blacklist are checked first: only active admins may
     use the bot while Maintenance Mode is ON, and blacklisted users are
     always rejected regardless of mode.
-
-    ``db_user``/``db_user_is_new`` come from ``UserActivityMiddleware``, which
-    runs before this handler on every update and is what actually creates the
-    user row (capturing any ``/start <id>`` referral payload in the process).
-    Registering again here -- with the same referral parsing as a fallback --
-    keeps this handler correct even if the middleware is ever skipped.
     """
     if message.from_user is None or message.bot is None:
         return
@@ -68,12 +60,13 @@ async def handle_start(
         await message.answer(await settings_service.maintenance_message())
         return
 
-    user = db_user
-    is_new = db_user_is_new
-    if user is None:
-        referred_by: int | None = None
-        if command.args and command.args.isdigit():
-            referred_by = int(command.args)
+    referred_by: int | None = None
+    if command.args and command.args.isdigit():
+        referred_by = int(command.args)
+
+    if db_user is not None:
+        user, is_new = db_user, db_user_is_new
+    else:
         user, is_new = await user_service.get_or_register(
             telegram_id=message.from_user.id,
             username=message.from_user.username,
@@ -92,9 +85,7 @@ async def handle_start(
             entity_id=str(message.from_user.id),
             new_value={"referred_by": user.referred_by},
         )
-        if user.referred_by is not None and bool(
-            await settings_service.get("referral_enabled")
-        ):
+        if user.referred_by is not None and await settings_service.get("referral_enabled"):
             await referral_reward_service.grant_invite_bonus(user.referred_by)
 
     missing_channels = await force_sub_service.get_missing_channels(

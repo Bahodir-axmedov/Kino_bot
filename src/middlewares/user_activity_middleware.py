@@ -12,31 +12,25 @@ from src.services.user_service import UserService
 
 
 def _extract_start_referral(event: TelegramObject) -> int | None:
-    """Return the numeric referral payload from a ``/start <id>`` deep link, if any.
-
-    This must live here -- not only in ``handlers/user/start.py`` -- because
-    this middleware is what actually creates the user row: it runs before
-    every handler, on every single update. If it created the row without
-    ``referred_by``, the row would already exist by the time the ``/start``
-    handler ran its own lookup, so the "brand-new user" branch (the only
-    place ``referred_by``/``invite_count`` are ever recorded) would never be
-    reached and referral tracking would be silently broken for every single
-    referred signup.
-    """
+    """Return the referrer's Telegram id encoded in a ``/start <id>`` deep link, if any."""
     if not isinstance(event, Message) or not event.text:
         return None
     parts = event.text.strip().split(maxsplit=1)
-    if not parts:
+    if len(parts) != 2 or parts[0] != "/start":
         return None
-    command = parts[0].split("@", 1)[0]
-    if command != "/start" or len(parts) < 2:
-        return None
-    payload = parts[1].strip()
-    return int(payload) if payload.isdigit() else None
+    arg = parts[1].strip()
+    return int(arg) if arg.isdigit() else None
 
 
 class UserActivityMiddleware(BaseMiddleware):
-    """Ensures every interacting user exists in the DB with fresh activity data."""
+    """Ensures every interacting user exists in the DB with fresh activity data.
+
+    Also captures the referrer id from a ``/start <id>`` deep link so every
+    entry point (not just the ``/start`` handler itself) sees a correctly
+    linked ``referred_by`` on the very first registration -- this is the
+    only place the user row is first created, so if this middleware skipped
+    passing ``referred_by`` here, the referral link would be lost forever.
+    """
 
     async def __call__(
         self,
@@ -44,7 +38,7 @@ class UserActivityMiddleware(BaseMiddleware):
         event: TelegramObject,
         data: dict[str, Any],
     ) -> Any:
-        """Register/refresh the user (capturing any /start referral), then continue."""
+        """Register/refresh the user, then continue the middleware chain."""
         user = getattr(event, "from_user", None)
         user_service: UserService | None = data.get("user_service")
         if user is not None and user_service is not None:

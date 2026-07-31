@@ -9,11 +9,7 @@ from aiogram.types import Animation, Audio, CallbackQuery, Document, Message, Ph
 from src.core.plugin import register_admin_plugin
 from src.keyboards.callback_data import AdminMenuCallback, MovieActionCallback
 from src.keyboards.inline.admin_panel import build_back_to_admin_menu_keyboard
-from src.keyboards.inline.movie import (
-    build_movie_admin_actions_keyboard,
-    build_movie_delete_confirm_keyboard,
-    build_movie_edit_field_keyboard,
-)
+from src.keyboards.inline.movie import build_movie_admin_actions_keyboard, build_movie_delete_confirm_keyboard
 from src.models.movie import MediaType
 from src.services.log_service import LogService
 from src.services.movie_service import MovieService
@@ -21,7 +17,6 @@ from src.states.movie_states import (
     BulkUploadStates,
     EditCaptionStates,
     EditCodeStates,
-    EditMovieFieldStates,
     MovieFormStates,
     SearchMovieStates,
 )
@@ -260,101 +255,6 @@ async def toggle_active(
             format_movie_caption(movie), reply_markup=build_movie_admin_actions_keyboard(movie)
         )
     await callback.answer("✅ Yangilandi.")
-
-
-_EDIT_FIELD_BY_ACTION: dict[str, tuple[str, str]] = {
-    "edit_title": ("title", "📝 Yangi nomini yuboring:"),
-    "edit_year": ("year", "📅 Yangi yilni yuboring (yoki /skip — tozalash uchun):"),
-    "edit_genre": ("genre", "🎭 Yangi janrni yuboring (yoki /skip — tozalash uchun):"),
-    "edit_description": ("description", "📄 Yangi tavsifni yuboring (yoki /skip — tozalash uchun):"),
-}
-
-
-@router.callback_query(MovieActionCallback.filter(F.action == "edit"))
-async def open_edit_menu(callback: CallbackQuery, callback_data: MovieActionCallback) -> None:
-    """Show the field picker for editing a movie (previously a dead button)."""
-    if isinstance(callback.message, Message):
-        await callback.message.edit_text(
-            "✏️ Qaysi maydonni tahrirlashni xohlaysiz?",
-            reply_markup=build_movie_edit_field_keyboard(callback_data.movie_id),
-        )
-    await callback.answer()
-
-
-@router.callback_query(MovieActionCallback.filter(F.action == "edit_cancel"))
-async def cancel_edit_menu(
-    callback: CallbackQuery, callback_data: MovieActionCallback, movie_service: MovieService
-) -> None:
-    """Cancel the field picker and return to the movie's action menu."""
-    movie = await movie_service.get_by_id(callback_data.movie_id)
-    if isinstance(callback.message, Message):
-        await callback.message.edit_text(
-            format_movie_caption(movie), reply_markup=build_movie_admin_actions_keyboard(movie)
-        )
-    await callback.answer("Bekor qilindi.")
-
-
-@router.callback_query(
-    MovieActionCallback.filter(F.action.in_(set(_EDIT_FIELD_BY_ACTION.keys())))
-)
-async def prompt_edit_field(
-    callback: CallbackQuery, callback_data: MovieActionCallback, state: FSMContext
-) -> None:
-    """Ask for the new value of the chosen field."""
-    field_name, prompt = _EDIT_FIELD_BY_ACTION[callback_data.action]
-    await state.set_state(EditMovieFieldStates.waiting_for_new_value)
-    await state.update_data(edit_movie_id=callback_data.movie_id, edit_field_name=field_name)
-    if isinstance(callback.message, Message):
-        await callback.message.edit_text(prompt)
-    await callback.answer()
-
-
-@router.message(EditMovieFieldStates.waiting_for_new_value, F.text)
-async def apply_field_edit(
-    message: Message, state: FSMContext, movie_service: MovieService, log_service: LogService
-) -> None:
-    """Persist the new value for the previously chosen field."""
-    data = await state.get_data()
-    await state.clear()
-    movie_id = data.get("edit_movie_id")
-    field_name = data.get("edit_field_name")
-    if movie_id is None or field_name is None:
-        await message.answer("❌ Sessiya eskirgan. Qaytadan urinib ko'ring.")
-        return
-
-    raw = message.text.strip()
-    clear = raw == "/skip" and field_name != "title"
-    value: object
-    if clear:
-        value = None
-    elif field_name == "year":
-        if not raw.isdigit():
-            await message.answer("❌ Yil raqam bo'lishi kerak. Qaytadan yuboring:")
-            await state.set_state(EditMovieFieldStates.waiting_for_new_value)
-            await state.update_data(edit_movie_id=movie_id, edit_field_name=field_name)
-            return
-        value = int(raw)
-    else:
-        value = validate_non_empty_text(raw, field_name="Qiymat", max_length=1024)
-
-    try:
-        movie = await movie_service.update_fields(movie_id, **{field_name: value})
-    except MovieNotFoundError as error:
-        await message.answer(f"❌ {error}")
-        return
-
-    await log_service.record(
-        actor_id=message.from_user.id if message.from_user else 0,
-        actor_role="admin",
-        action="movie_field_edited",
-        entity_type="movie",
-        entity_id=movie.code,
-        new_value={field_name: value},
-    )
-    await message.answer(
-        f"✅ Yangilandi!\n\n{format_movie_caption(movie)}",
-        reply_markup=build_movie_admin_actions_keyboard(movie),
-    )
 
 
 @router.callback_query(AdminMenuCallback.filter(F.section == "movie_edit_code"))

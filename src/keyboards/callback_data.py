@@ -186,7 +186,13 @@ class PaymentReviewCallback(CallbackData, prefix="pay_review"):
     request_id: int
 
 
+class MediaQueueConfirmCallback(CallbackData, prefix="mq_confirm"):
+    """Admin confirms the edited caption/details for a Media Queue-captured movie."""
+
+    code: str
+
+
 class AdminRemoveCallback(CallbackData, prefix="admin_rm"):
-    """Owner removes an existing administrator from the Admins screen."""
+    """Owner removes an existing administrator by Telegram id."""
 
     telegram_id: int

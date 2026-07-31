@@ -79,6 +79,20 @@ class MovieService:
         """Return an existing movie sharing the same Telegram file id, if any."""
         return await self._repository.find_duplicate_by_file_id(telegram_file_id)
 
+    async def ensure_code_available(self, code: str, *, requested_by: int | None = None) -> None:
+        """Raise if ``code`` cannot be used for a new movie right now.
+
+        Shared by ``create_movie`` and the Media Queue confirmation flow so a
+        code can be validated as soon as an admin types it (fast feedback),
+        then re-validated at the final confirmation step to close any race
+        window opened while the admin was editing the caption.
+        """
+        reservation = await self._reserved.get_active_by_code(code)
+        if reservation is not None and reservation.reserved_by != requested_by:
+            raise CodeReservedError(f"'{code}' kodi hozircha boshqa admin tomonidan band qilingan.")
+        if await self._repository.code_exists(code):
+            raise MovieCodeAlreadyExistsError(f"'{code}' kodi allaqachon band.")
+
     async def create_movie(
         self,
         *,
@@ -119,11 +133,7 @@ class MovieService:
         silently overwriting the previous entry/reservation.
         """
         if code:
-            reservation = await self._reserved.get_active_by_code(code)
-            if reservation is not None and reservation.reserved_by != added_by:
-                raise CodeReservedError(f"'{code}' kodi hozircha boshqa admin tomonidan band qilingan.")
-            if await self._repository.code_exists(code):
-                raise MovieCodeAlreadyExistsError(f"'{code}' kodi allaqachon band.")
+            await self.ensure_code_available(code, requested_by=added_by)
             resolved_code = code
         elif use_sequential_code:
             current_max = await self._repository.max_numeric_code()
