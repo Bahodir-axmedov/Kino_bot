@@ -276,16 +276,33 @@ async def handle_force_sub_recheck(
     if callback_data.movie_code == "-":
         missing = await force_sub_service.get_missing_channels(callback.bot, callback.from_user.id)
         if missing:
-            await callback.message.edit_text(
-                format_force_sub_gate_message(missing),
-                reply_markup=build_force_sub_gate_keyboard(missing, "-"),
+            # The user tapped "Tekshirish" without actually having joined
+            # anything new yet, so the gate text/keyboard are byte-for-byte
+            # identical to what is already on screen. Telegram rejects a
+            # no-op edit_text with "message is not modified", which is not
+            # a real error -- swallow just that case and tell the user why
+            # the check failed instead of letting it fall through to the
+            # generic "kutilmagan xatolik" handler.
+            try:
+                await callback.message.edit_text(
+                    format_force_sub_gate_message(missing),
+                    reply_markup=build_force_sub_gate_keyboard(missing, "-"),
+                )
+            except TelegramBadRequest as error:
+                if "message is not modified" not in str(error).lower():
+                    raise
+            await callback.answer(
+                "Siz hali barcha majburiy kanallarga obuna bo'lmagansiz.", show_alert=True
             )
-            await callback.answer()
             return
         await user_service.record_start(callback.from_user.id)
-        await callback.message.edit_text(
-            "Obuna tasdiqlandi! Endi kino kodini yuboring, masalan: 1055"
-        )
+        try:
+            await callback.message.edit_text(
+                "Obuna tasdiqlandi! Endi kino kodini yuboring, masalan: 1055"
+            )
+        except TelegramBadRequest as error:
+            if "message is not modified" not in str(error).lower():
+                raise
         await callback.answer("OK")
         return
 
