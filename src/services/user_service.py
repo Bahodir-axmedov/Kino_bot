@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import csv
 import io
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -62,7 +62,7 @@ class UserService:
         """Update a user's last-active timestamp to now."""
         user = await self._repository.get_by_telegram_id(telegram_id)
         if user is not None:
-            user.last_active_at = datetime.now(timezone.utc)
+            user.last_active_at = datetime.now(UTC)
             await self._repository.flush()
 
     async def assert_not_restricted(self, user: User) -> None:
@@ -130,9 +130,7 @@ class UserService:
         if user is None:
             return None
         user.is_premium = True
-        user.premium_expires_at = (
-            datetime.now(timezone.utc) + timedelta(days=days) if days else None
-        )
+        user.premium_expires_at = datetime.now(UTC) + timedelta(days=days) if days else None
         await self._repository.flush()
         return user
 
@@ -214,9 +212,20 @@ class UserService:
         writer = csv.writer(buffer)
         writer.writerow(
             [
-                "telegram_id", "username", "is_banned", "is_muted", "is_premium",
-                "invite_count", "movies_received_count", "searches_count", "start_count",
-                "warnings_count", "spam_score", "is_verified", "joined_at", "last_active_at",
+                "telegram_id",
+                "username",
+                "is_banned",
+                "is_muted",
+                "is_premium",
+                "invite_count",
+                "movies_received_count",
+                "searches_count",
+                "start_count",
+                "warnings_count",
+                "spam_score",
+                "is_verified",
+                "joined_at",
+                "last_active_at",
             ]
         )
         ids = await self._repository.list_all_ids(exclude_banned=False)
@@ -226,10 +235,20 @@ class UserService:
                 continue
             writer.writerow(
                 [
-                    user.telegram_id, user.username or "", user.is_banned, user.is_muted,
-                    user.is_premium, user.invite_count, user.movies_received_count,
-                    user.searches_count, user.start_count, user.warnings_count,
-                    user.spam_score, user.is_verified, user.joined_at, user.last_active_at or "",
+                    user.telegram_id,
+                    user.username or "",
+                    user.is_banned,
+                    user.is_muted,
+                    user.is_premium,
+                    user.invite_count,
+                    user.movies_received_count,
+                    user.searches_count,
+                    user.start_count,
+                    user.warnings_count,
+                    user.spam_score,
+                    user.is_verified,
+                    user.joined_at,
+                    user.last_active_at or "",
                 ]
             )
         return buffer.getvalue()

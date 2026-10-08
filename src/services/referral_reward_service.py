@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -33,13 +33,18 @@ class ReferralRewardService:
             user_id=referrer_id,
             reward_type="invite_bonus",
             amount=amount,
-            granted_at=datetime.now(timezone.utc),
+            granted_at=datetime.now(UTC),
         )
         await self._repository.add(reward)
 
         referrer = await self._user_repository.get_by_id(referrer_id)
         threshold = int(await self._settings.get("referral_premium_bonus_threshold"))
-        if referrer is not None and threshold > 0 and referrer.invite_count > 0 and referrer.invite_count % threshold == 0:
+        if (
+            referrer is not None
+            and threshold > 0
+            and referrer.invite_count > 0
+            and referrer.invite_count % threshold == 0
+        ):
             await self._premium.grant(referrer_id, days=30, plan="referral_bonus", granted_by=None)
             await self._repository.add(
                 ReferralReward(
@@ -47,7 +52,7 @@ class ReferralRewardService:
                     reward_type="premium_bonus",
                     amount=1,
                     note=f"{threshold} taklifga yetgani uchun Premium bonus",
-                    granted_at=datetime.now(timezone.utc),
+                    granted_at=datetime.now(UTC),
                 )
             )
         return reward
@@ -63,6 +68,9 @@ class ReferralRewardService:
     async def top_referrers(self, limit: int = 10) -> list[User]:
         """Return the users with the highest ``invite_count``, descending."""
         result = await self._session.execute(
-            select(User).where(User.invite_count > 0).order_by(User.invite_count.desc()).limit(limit)
+            select(User)
+            .where(User.invite_count > 0)
+            .order_by(User.invite_count.desc())
+            .limit(limit)
         )
         return list(result.scalars().all())

@@ -25,7 +25,8 @@ def _format_snapshot(snapshot: DatabaseHealthSnapshot) -> str:
         f"📊 Jami qatorlar: {snapshot.total_rows}",
         f"💾 Fayl hajmi: {snapshot.database_size_mb} MB",
         f"🧩 Fragmentatsiya: {snapshot.fragmentation_percent}%",
-        f"{integrity_icon} Yaxlitlik tekshiruvi: {'OK' if snapshot.integrity_ok else 'Muammo aniqlandi'}",
+        f"{integrity_icon} Yaxlitlik tekshiruvi: "
+        f"{'OK' if snapshot.integrity_ok else 'Muammo aniqlandi'}",
     ]
     if snapshot.broken_indexes:
         lines.append(f"⚠️ Shubhali indekslar: {', '.join(snapshot.broken_indexes)}")
@@ -40,7 +41,9 @@ async def open_database_manager(callback: CallbackQuery, session, settings: Sett
     service = DatabaseManagerService(session, settings)
     snapshot = await service.build_snapshot()
     if isinstance(callback.message, Message):
-        await callback.message.edit_text(_format_snapshot(snapshot), reply_markup=build_database_manager_keyboard())
+        await callback.message.edit_text(
+            _format_snapshot(snapshot), reply_markup=build_database_manager_keyboard()
+        )
     await callback.answer()
 
 
@@ -57,7 +60,9 @@ async def run_vacuum(callback: CallbackQuery, session, settings: Settings) -> No
     await service.vacuum()
     snapshot = await service.build_snapshot()
     if isinstance(callback.message, Message):
-        await callback.message.edit_text(_format_snapshot(snapshot), reply_markup=build_database_manager_keyboard())
+        await callback.message.edit_text(
+            _format_snapshot(snapshot), reply_markup=build_database_manager_keyboard()
+        )
     await callback.answer("✅ VACUUM bajarildi")
 
 
@@ -68,7 +73,9 @@ async def run_analyze(callback: CallbackQuery, session, settings: Settings) -> N
     await service.analyze()
     snapshot = await service.build_snapshot()
     if isinstance(callback.message, Message):
-        await callback.message.edit_text(_format_snapshot(snapshot), reply_markup=build_database_manager_keyboard())
+        await callback.message.edit_text(
+            _format_snapshot(snapshot), reply_markup=build_database_manager_keyboard()
+        )
     await callback.answer("✅ ANALYZE bajarildi")
 
 
@@ -79,7 +86,9 @@ async def run_reindex(callback: CallbackQuery, session, settings: Settings) -> N
     await service.reindex()
     snapshot = await service.build_snapshot()
     if isinstance(callback.message, Message):
-        await callback.message.edit_text(_format_snapshot(snapshot), reply_markup=build_database_manager_keyboard())
+        await callback.message.edit_text(
+            _format_snapshot(snapshot), reply_markup=build_database_manager_keyboard()
+        )
     await callback.answer("✅ REINDEX bajarildi")
 
 
@@ -89,7 +98,9 @@ async def run_optimize(callback: CallbackQuery, session, settings: Settings) -> 
     service = DatabaseManagerService(session, settings)
     snapshot = await service.optimize()
     if isinstance(callback.message, Message):
-        await callback.message.edit_text(_format_snapshot(snapshot), reply_markup=build_database_manager_keyboard())
+        await callback.message.edit_text(
+            _format_snapshot(snapshot), reply_markup=build_database_manager_keyboard()
+        )
     await callback.answer("⚡ To'liq optimizatsiya bajarildi")
 
 

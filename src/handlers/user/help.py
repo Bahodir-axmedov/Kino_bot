@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from aiogram import Router, F
+from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import Message
 
@@ -22,7 +22,7 @@ async def handle_help(message: Message) -> None:
         "1. Kino kodini yuboring (masalan: <code>1055</code>)\n"
         "2. Agar kod to'g'ri bo'lsa, botdan filmni olasiz\n\n"
         "🔍 Nom, janr, yil yoki til bo'yicha qidirish uchun "
-        "\"🔍 Kino qidirish\" tugmasini bosing."
+        '"🔍 Kino qidirish" tugmasini bosing.'
     )
 
 

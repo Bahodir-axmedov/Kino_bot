@@ -46,13 +46,15 @@ async def receive_content(message: Message, state: FSMContext) -> None:
     )
     await state.set_state(BroadcastStates.waiting_for_buttons)
     await message.answer(
-        "🔗 Inline tugma qo'shmoqchimisiz? \"Matn|URL\" formatida yuboring yoki /skip:"
+        '🔗 Inline tugma qo\'shmoqchimisiz? "Matn|URL" formatida yuboring yoki /skip:'
     )
 
 
 @router.message(BroadcastStates.waiting_for_buttons, F.text)
 async def receive_buttons(message: Message, state: FSMContext) -> None:
     """Capture an optional inline button, then ask for final confirmation."""
+    if message.text is None:
+        return
     reply_markup: InlineKeyboardMarkup | None = None
     if message.text.strip() != "/skip" and "|" in message.text:
         label, url = (part.strip() for part in message.text.split("|", 1))
@@ -83,7 +85,9 @@ async def receive_buttons(message: Message, state: FSMContext) -> None:
     )
 
 
-@router.callback_query(BroadcastStates.confirm, BroadcastConfirmCallback.filter(F.action == "cancel"))
+@router.callback_query(
+    BroadcastStates.confirm, BroadcastConfirmCallback.filter(F.action == "cancel")
+)
 async def cancel_broadcast(callback: CallbackQuery, state: FSMContext) -> None:
     """Cancel the pending broadcast composition."""
     await state.clear()

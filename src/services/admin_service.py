@@ -23,7 +23,9 @@ _ROLE_RANK: dict[AdminRole, int] = {
 
 # Admin Rollari (#18): named role groups used for feature-specific gating
 # (e.g. only Content Manager/Uploader/Admin/Owner may edit the catalogue).
-CONTENT_ROLES = frozenset({AdminRole.CONTENT_MANAGER, AdminRole.UPLOADER, AdminRole.ADMIN, AdminRole.OWNER})
+CONTENT_ROLES = frozenset(
+    {AdminRole.CONTENT_MANAGER, AdminRole.UPLOADER, AdminRole.ADMIN, AdminRole.OWNER}
+)
 SUPPORT_ROLES = frozenset({AdminRole.SUPPORT, AdminRole.ADMIN, AdminRole.OWNER})
 ANALYST_ROLES = frozenset({AdminRole.ANALYST, AdminRole.ADMIN, AdminRole.OWNER})
 BACKUP_ROLES = frozenset({AdminRole.BACKUP_MANAGER, AdminRole.ADMIN, AdminRole.OWNER})
@@ -67,9 +69,7 @@ class AdminService:
             )
         return role
 
-    async def add_admin(
-        self, *, telegram_id: int, role: AdminRole, added_by: int
-    ) -> AdminUser:
+    async def add_admin(self, *, telegram_id: int, role: AdminRole, added_by: int) -> AdminUser:
         """Add (or reactivate) an administrator with the given role."""
         existing = await self._repository.get_by_telegram_id(telegram_id)
         if existing is not None:

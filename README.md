@@ -115,9 +115,17 @@ configuration all branch on the URL scheme automatically.
 5. **Deploy.** Railway sets `PORT` automatically; the app binds to
    `HOST`/`PORT` and Railway's health checks hit `GET /health`, which
    returns `200 OK` once the database connection is confirmed live.
-6. **Migrations run automatically** on container start (see `Dockerfile`'s
-   `CMD`, which runs `alembic upgrade head` before `python -m src.main`), so
-   a fresh Volume gets its schema created with no manual step.
+6. **Schema is created automatically** on container start: `src.main` calls
+   `init_database()`, which runs `Base.metadata.create_all` against the
+   configured database and then applies the idempotent in-place migrations
+   in `src/database/engine.py` (e.g. dropping the obsolete
+   `movies.source_chat_id` FK). A fresh Volume therefore needs no manual
+   step. The Alembic migrations under `alembic/versions/` remain the
+   canonical, versioned history of the schema and can be applied manually
+   with `alembic upgrade head` (for example when provisioning a new
+   PostgreSQL database); they are intentionally **not** run automatically at
+   container start, because doing so on an existing `create_all`-provisioned
+   SQLite Volume would attempt to re-create tables that already exist.
 7. **Graceful shutdown**: the process listens for `SIGTERM`/`SIGINT`,
    stops polling/webhook delivery, shuts the scheduler down, closes the bot
    session, and disposes the database engine before exiting — Railway

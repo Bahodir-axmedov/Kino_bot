@@ -44,7 +44,9 @@ class SystemLog(TimestampMixin, BigIntPrimaryKeyMixin, Base):
 
     __tablename__ = "system_logs"
 
-    level: Mapped[LogLevel] = mapped_column(SAEnum(LogLevel, name="log_level"), nullable=False, index=True)
+    level: Mapped[LogLevel] = mapped_column(
+        SAEnum(LogLevel, name="log_level"), nullable=False, index=True
+    )
     category: Mapped[LogCategory] = mapped_column(
         SAEnum(LogCategory, name="log_category"), nullable=False, index=True
     )
@@ -57,4 +59,6 @@ class SystemLog(TimestampMixin, BigIntPrimaryKeyMixin, Base):
     stack_trace: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     def __repr__(self) -> str:  # pragma: no cover
-        return f"SystemLog(level={self.level!r}, category={self.category!r}, action={self.action!r})"
+        return (
+            f"SystemLog(level={self.level!r}, category={self.category!r}, action={self.action!r})"
+        )

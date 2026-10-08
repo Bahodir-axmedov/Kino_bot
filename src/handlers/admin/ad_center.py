@@ -34,7 +34,9 @@ async def _render(callback: CallbackQuery, ad_service: AdService) -> None:
                 f"· {campaign.impressions_count} marta ko'rsatilgan"
             )
     if isinstance(callback.message, Message):
-        await callback.message.edit_text("\n".join(lines), reply_markup=build_ads_keyboard(campaigns))
+        await callback.message.edit_text(
+            "\n".join(lines), reply_markup=build_ads_keyboard(campaigns)
+        )
 
 
 @router.callback_query(AdminMenuCallback.filter(F.section == "ads"))
@@ -56,6 +58,8 @@ async def prompt_create_ad(callback: CallbackQuery, state: FSMContext) -> None:
 @router.message(AdStates.waiting_for_text, F.text)
 async def receive_ad_text(message: Message, state: FSMContext) -> None:
     """Capture the campaign text and ask for the display interval."""
+    if message.text is None:
+        return
     await state.update_data(ad_text=message.text.strip())
     await state.set_state(AdStates.waiting_for_interval)
     await message.answer(
@@ -66,6 +70,8 @@ async def receive_ad_text(message: Message, state: FSMContext) -> None:
 @router.message(AdStates.waiting_for_interval, F.text)
 async def receive_ad_interval(message: Message, state: FSMContext, ad_service: AdService) -> None:
     """Create the text ad campaign with the supplied interval."""
+    if message.text is None:
+        return
     data = await state.get_data()
     await state.clear()
     raw = message.text.strip()
@@ -84,11 +90,15 @@ async def receive_ad_interval(message: Message, state: FSMContext, ad_service: A
         await message.answer(f"❌ {error}")
         return
     campaigns = await ad_service.list_all()
-    await message.answer("✅ Reklama kampaniyasi yaratildi.", reply_markup=build_ads_keyboard(campaigns))
+    await message.answer(
+        "✅ Reklama kampaniyasi yaratildi.", reply_markup=build_ads_keyboard(campaigns)
+    )
 
 
 @router.callback_query(AdActionCallback.filter(F.action == "toggle"))
-async def toggle_ad(callback: CallbackQuery, callback_data: AdActionCallback, ad_service: AdService) -> None:
+async def toggle_ad(
+    callback: CallbackQuery, callback_data: AdActionCallback, ad_service: AdService
+) -> None:
     """Toggle a campaign's active state."""
     campaigns = await ad_service.list_all()
     current = next((c for c in campaigns if c.id == callback_data.campaign_id), None)
@@ -99,7 +109,9 @@ async def toggle_ad(callback: CallbackQuery, callback_data: AdActionCallback, ad
 
 
 @router.callback_query(AdActionCallback.filter(F.action == "delete"))
-async def delete_ad(callback: CallbackQuery, callback_data: AdActionCallback, ad_service: AdService) -> None:
+async def delete_ad(
+    callback: CallbackQuery, callback_data: AdActionCallback, ad_service: AdService
+) -> None:
     """Permanently delete a campaign."""
     try:
         await ad_service.delete(callback_data.campaign_id)

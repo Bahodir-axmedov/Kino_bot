@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -31,12 +31,18 @@ class PremiumService:
         user = await self._user_repository.get_by_id(user_id)
         if user is None:
             raise InvalidInputError("Foydalanuvchi topilmadi.")
-        now = datetime.now(timezone.utc)
-        base = user.premium_expires_at if user.premium_expires_at and user.premium_expires_at > now else now
+        now = datetime.now(UTC)
+        base = (
+            user.premium_expires_at
+            if user.premium_expires_at and user.premium_expires_at > now
+            else now
+        )
         new_expiry = base + timedelta(days=days)
         user.is_premium = True
         user.premium_expires_at = new_expiry
-        history = PremiumHistory(user_id=user_id, granted_by=granted_by, plan=plan, started_at=now, expires_at=new_expiry)
+        history = PremiumHistory(
+            user_id=user_id, granted_by=granted_by, plan=plan, started_at=now, expires_at=new_expiry
+        )
         await self._history_repository.add(history)
         return history
 
@@ -60,4 +66,4 @@ class PremiumService:
             return False
         if user.premium_expires_at is None:
             return True
-        return user.premium_expires_at > datetime.now(timezone.utc)
+        return user.premium_expires_at > datetime.now(UTC)

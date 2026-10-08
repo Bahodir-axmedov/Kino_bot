@@ -9,7 +9,7 @@ setup described in the deployment requirements.
 from __future__ import annotations
 
 import shutil
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import structlog
@@ -46,7 +46,7 @@ class BackupService:
         backup_dir = Path(self._settings.backup_path)
         backup_dir.mkdir(parents=True, exist_ok=True)
 
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         destination = backup_dir / f"backup_{timestamp}.sqlite3"
         shutil.copy2(source, destination)
         logger.info("backup.created", path=str(destination))

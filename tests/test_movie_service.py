@@ -78,7 +78,9 @@ async def test_replace_code_moves_movie_to_new_code(async_session: AsyncSession)
 
 
 @pytest.mark.asyncio
-async def test_register_delivery_increments_views_and_downloads(async_session: AsyncSession) -> None:
+async def test_register_delivery_increments_views_and_downloads(
+    async_session: AsyncSession,
+) -> None:
     service = MovieService(async_session)
     movie = await service.create_movie(
         code="5000", title="Popular", telegram_file_id="FILE_ID_5", media_type=MediaType.VIDEO

@@ -6,6 +6,7 @@ Run with: ``python -m src.main``
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import signal
 
 import structlog
@@ -90,27 +91,18 @@ async def main() -> None:
 
     stop_event = asyncio.Event()
 
-    def _request_shutdown() -> None:
+    def _request_shutdown(*_args: object) -> None:
         logger.info("shutdown.signal_received")
         stop_event.set()
 
     loop = asyncio.get_running_loop()
-    for sig_name in (signal.SIGINT, signal.SIGTERM):
-        try:
-            loop.add_signal_handler(sig_name, _request_shutdown)  # type: ignore[attr-defined]
-        except (NotImplementedError, AttributeError):
-            loop.add_signal_handler = None  # noqa: E731 - platform without signal support
-
     try:
-        loop.add_signal_handler  # noqa: B018 - probe attribute existence
-    except AttributeError:
-        pass
-
-    for sig_name in (signal.SIGINT, signal.SIGTERM):
-        try:
-            signal.signal(sig_name, lambda *_: _request_shutdown())
-        except (ValueError, OSError):  # pragma: no cover - non-main-thread/platform limits
-            pass
+        for sig_name in (signal.SIGINT, signal.SIGTERM):
+            loop.add_signal_handler(sig_name, _request_shutdown)
+    except NotImplementedError:  # pragma: no cover - Windows / non-main-thread
+        for sig_name in (signal.SIGINT, signal.SIGTERM):
+            with contextlib.suppress(ValueError, OSError):
+                signal.signal(sig_name, _request_shutdown)
 
     polling_task: asyncio.Task | None = None
     if not settings.use_webhook:
@@ -130,5 +122,10 @@ async def main() -> None:
     logger.info("shutdown.complete")
 
 
-if __name__ == "__main__":
+def run() -> None:
+    """Synchronous entry point used by the ``kino-bot`` console script."""
     asyncio.run(main())
+
+
+if __name__ == "__main__":
+    run()

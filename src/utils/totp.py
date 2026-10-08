@@ -36,14 +36,21 @@ def _hotp(secret: str, counter: int, digits: int = _DEFAULT_DIGITS) -> str:
     return str(truncated % (10**digits)).zfill(digits)
 
 
-def current_code(secret: str, *, period: int = _DEFAULT_PERIOD_SECONDS, digits: int = _DEFAULT_DIGITS) -> str:
+def current_code(
+    secret: str, *, period: int = _DEFAULT_PERIOD_SECONDS, digits: int = _DEFAULT_DIGITS
+) -> str:
     """Return the TOTP code for ``secret`` valid at the current time."""
     counter = int(time.time() // period)
     return _hotp(secret, counter, digits)
 
 
 def verify_code(
-    secret: str, code: str, *, period: int = _DEFAULT_PERIOD_SECONDS, digits: int = _DEFAULT_DIGITS, window: int = 1
+    secret: str,
+    code: str,
+    *,
+    period: int = _DEFAULT_PERIOD_SECONDS,
+    digits: int = _DEFAULT_DIGITS,
+    window: int = 1,
 ) -> bool:
     """Verify ``code`` against ``secret``, tolerating clock drift of ``window`` periods."""
     counter = int(time.time() // period)

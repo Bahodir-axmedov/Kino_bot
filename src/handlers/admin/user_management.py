@@ -19,7 +19,9 @@ from src.utils.formatters import format_user_profile
 router = Router(name="admin.user_management")
 
 
-def _build_user_actions_keyboard(telegram_id: int, is_banned: bool, is_premium: bool) -> InlineKeyboardMarkup:
+def _build_user_actions_keyboard(
+    telegram_id: int, is_banned: bool, is_premium: bool
+) -> InlineKeyboardMarkup:
     """Build the inline action row for a single user lookup result."""
     ban_button = InlineKeyboardButton(
         text=("✅ Unban" if is_banned else "🚫 Ban"),
@@ -52,6 +54,8 @@ async def open_user_search(callback: CallbackQuery, state: FSMContext) -> None:
 @router.message(UserManagementStates.waiting_for_identifier, F.text)
 async def show_user_profile(message: Message, state: FSMContext, user_service: UserService) -> None:
     """Look up a user and show their profile with moderation actions."""
+    if message.text is None:
+        return
     await state.clear()
     identifier = message.text.strip()
     user = await user_service.find_by_identifier(identifier)
@@ -132,7 +136,11 @@ async def toggle_mute_user(
     if user is None:
         await callback.answer("Topilmadi.", show_alert=True)
         return
-    user = await user_service.set_muted(user.telegram_id, not user.is_muted)
+    updated = await user_service.set_muted(user.telegram_id, not user.is_muted)
+    if updated is None:
+        await callback.answer("Topilmadi.", show_alert=True)
+        return
+    user = updated
     await log_service.record(
         actor_id=callback.from_user.id,
         actor_role="admin",
@@ -144,7 +152,9 @@ async def toggle_mute_user(
     if isinstance(callback.message, Message):
         await callback.message.edit_text(
             format_user_profile(user),
-            reply_markup=_build_user_actions_keyboard(user.telegram_id, user.is_banned, user.is_premium),
+            reply_markup=_build_user_actions_keyboard(
+                user.telegram_id, user.is_banned, user.is_premium
+            ),
         )
     await callback.answer("🔇 Ovozsiz qilindi." if user.is_muted else "🔊 Ovoz qaytarildi.")
 
@@ -179,6 +189,8 @@ async def receive_premium_days(
         await message.answer("❌ Sessiya eskirgan. Qaytadan urinib ko'ring.")
         return
 
+    if message.text is None:
+        return
     try:
         days = int(message.text.strip())
     except ValueError:
@@ -188,7 +200,9 @@ async def receive_premium_days(
         return
 
     try:
-        await premium_service.grant(telegram_id, days=days, granted_by=message.from_user.id if message.from_user else None)
+        await premium_service.grant(
+            telegram_id, days=days, granted_by=message.from_user.id if message.from_user else None
+        )
     except InvalidInputError as error:
         await message.answer(f"❌ {error}")
         return

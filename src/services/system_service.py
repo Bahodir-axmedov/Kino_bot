@@ -10,7 +10,7 @@ from __future__ import annotations
 import os
 import time
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import psutil
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -73,7 +73,7 @@ class SystemService:
 
     async def build_dashboard(self) -> DashboardSnapshot:
         """Compute and return the full real-time dashboard snapshot."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         yesterday_start = today_start - timedelta(days=1)
         five_minutes_ago = now - timedelta(minutes=5)
@@ -99,7 +99,9 @@ class SystemService:
         )
 
 
-async def measure_bot_ping(bot) -> float:  # noqa: ANN001 - aiogram Bot, kept untyped to avoid import cycle
+async def measure_bot_ping(
+    bot,
+) -> float:  # noqa: ANN001 - aiogram Bot, kept untyped to avoid import cycle
     """Return the round-trip latency (ms) of a cheap Telegram API call."""
     started = time.monotonic()
     await bot.get_me()

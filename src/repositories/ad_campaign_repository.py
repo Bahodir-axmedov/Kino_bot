@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.ad_campaign import AdCampaign
 from src.repositories.base import BaseRepository
@@ -18,7 +17,7 @@ class AdCampaignRepository(BaseRepository[AdCampaign]):
 
     async def list_active_now(self) -> list[AdCampaign]:
         """Return active campaigns currently inside their schedule window, by priority."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         result = await self._session.execute(
             select(AdCampaign)
             .where(AdCampaign.is_active.is_(True))
@@ -35,6 +34,9 @@ class AdCampaignRepository(BaseRepository[AdCampaign]):
     async def list_all(self, limit: int = 100, offset: int = 0) -> list[AdCampaign]:
         """Return every campaign ordered by priority, most recent first."""
         result = await self._session.execute(
-            select(AdCampaign).order_by(AdCampaign.priority.desc(), AdCampaign.id.desc()).limit(limit).offset(offset)
+            select(AdCampaign)
+            .order_by(AdCampaign.priority.desc(), AdCampaign.id.desc())
+            .limit(limit)
+            .offset(offset)
         )
         return list(result.scalars().all())

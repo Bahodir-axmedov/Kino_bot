@@ -52,4 +52,6 @@ class BackupRecord(TimestampMixin, BigIntPrimaryKeyMixin, Base):
     created_by: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
 
     def __repr__(self) -> str:  # pragma: no cover
-        return f"BackupRecord(filename={self.filename!r}, integrity_status={self.integrity_status!r})"
+        return (
+            f"BackupRecord(filename={self.filename!r}, integrity_status={self.integrity_status!r})"
+        )

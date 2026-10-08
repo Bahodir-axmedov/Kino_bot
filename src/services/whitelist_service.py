@@ -18,12 +18,19 @@ class WhitelistService:
         self._repository = WhitelistRepository(session)
 
     async def add(
-        self, entry_type: WhitelistEntryType, value: str, *, note: str | None = None, created_by: int | None = None
+        self,
+        entry_type: WhitelistEntryType,
+        value: str,
+        *,
+        note: str | None = None,
+        created_by: int | None = None,
     ) -> WhitelistEntry:
         """Exempt a new value from restrictions."""
         if await self._repository.find(entry_type, value) is not None:
             raise InvalidInputError("Bu qiymat allaqachon whitelistda.")
-        entry = WhitelistEntry(entry_type=entry_type, value=value.strip(), note=note, created_by=created_by)
+        entry = WhitelistEntry(
+            entry_type=entry_type, value=value.strip(), note=note, created_by=created_by
+        )
         return await self._repository.add(entry)
 
     async def remove(self, entry_id: int) -> None:

@@ -37,7 +37,11 @@ def format_movie_caption(movie: Movie) -> str:
 def format_user_profile(user: User) -> str:
     """Render an admin-facing profile summary for a single user."""
     full_name = " ".join(part for part in (user.first_name, user.last_name) if part)
-    status = "🚫 Bloklangan" if user.is_banned else ("🔇 Ovozi o'chirilgan" if user.is_muted else "✅ Faol")
+    status = (
+        "🚫 Bloklangan"
+        if user.is_banned
+        else ("🔇 Ovozi o'chirilgan" if user.is_muted else "✅ Faol")
+    )
     premium = (
         f"⭐️ Premium (tugaydi: {format_datetime(user.premium_expires_at)})"
         if user.is_premium

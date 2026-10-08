@@ -12,6 +12,8 @@ Two payment methods are offered, both driven by admin-editable settings
 
 from __future__ import annotations
 
+from typing import TypedDict
+
 from aiogram import F, Router
 from aiogram.exceptions import TelegramAPIError
 from aiogram.fsm.context import FSMContext
@@ -44,7 +46,22 @@ from src.utils.formatters import format_datetime
 router = Router(name="user.premium")
 
 
-async def _load_config(settings_service: SettingsService) -> dict[str, object]:
+class _PremiumConfig(TypedDict):
+    """Typed view of the admin-configurable Premium/payment settings."""
+
+    enabled: bool
+    stars_enabled: bool
+    card_enabled: bool
+    stars_price: int
+    uzs_price: int
+    days: int
+    card_number: str
+    card_holder: str
+    card_bank: str
+    features: str
+
+
+async def _load_config(settings_service: SettingsService) -> _PremiumConfig:
     """Read every admin-configurable Premium/payment value in one place."""
     return {
         "enabled": bool(await settings_service.get("premium_enabled")),
@@ -93,7 +110,9 @@ async def show_premium(
     days = int(config["days"])
 
     if PremiumService.is_active(user):
-        expiry = format_datetime(user.premium_expires_at) if user.premium_expires_at else "muddatsiz"
+        expiry = (
+            format_datetime(user.premium_expires_at) if user.premium_expires_at else "muddatsiz"
+        )
         header = (
             "\u2B50\uFE0F <b>Premium holati</b>\n\n"
             "\u2705 Sizda Premium faol.\n"
@@ -133,9 +152,7 @@ async def show_premium(
 
 
 @router.callback_query(PremiumBuyCallback.filter(F.method == "stars"))
-async def buy_with_stars(
-    callback: CallbackQuery, settings_service: SettingsService
-) -> None:
+async def buy_with_stars(callback: CallbackQuery, settings_service: SettingsService) -> None:
     """Send a native Telegram Stars (XTR) invoice for a Premium subscription."""
     config = await _load_config(settings_service)
     if not config["enabled"] or not config["stars_enabled"]:
@@ -149,7 +166,9 @@ async def buy_with_stars(
     if isinstance(callback.message, Message):
         await callback.message.answer_invoice(
             title=f"{days} kunlik Premium",
-            description=f"{days} kunlik Premium obuna. To'lov Telegram Stars orqali amalga oshiriladi.",
+            description=(
+                f"{days} kunlik Premium obuna. To'lov Telegram Stars orqali " "amalga oshiriladi."
+            ),
             payload=f"premium:{days}",
             currency="XTR",
             prices=[LabeledPrice(label=f"{days} kunlik Premium", amount=price)],
@@ -159,9 +178,7 @@ async def buy_with_stars(
 
 
 @router.callback_query(PremiumBuyCallback.filter(F.method == "card"))
-async def buy_with_card(
-    callback: CallbackQuery, settings_service: SettingsService
-) -> None:
+async def buy_with_card(callback: CallbackQuery, settings_service: SettingsService) -> None:
     """Show the admin's card details and how to submit a receipt."""
     config = await _load_config(settings_service)
     if not config["enabled"] or not config["card_enabled"]:

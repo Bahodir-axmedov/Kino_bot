@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -47,12 +47,12 @@ class SearchLogService:
     async def period_summary(self, period: str) -> dict[str, int | list[tuple[str, int]]]:
         """Return counts + top queries for one of today/week/month/year (#9)."""
         delta = _PERIODS.get(period, _PERIODS["today"])
-        since = datetime.now(timezone.utc) - delta
+        since = datetime.now(UTC) - delta
         total = await self._repository.count_since(since)
         found = await self._repository.count_since(since, found=True)
         missed = await self._repository.count_since(since, found=False)
-        top_found = await self._repository.top_queries_since(since, found=True, limit=10)
-        top_missing = await self._repository.top_queries_since(since, found=False, limit=10)
+        top_found = list(await self._repository.top_queries_since(since, found=True, limit=10))
+        top_missing = list(await self._repository.top_queries_since(since, found=False, limit=10))
         return {
             "total": total,
             "found": found,
@@ -63,5 +63,5 @@ class SearchLogService:
 
     async def top_missing_codes(self, limit: int = 10) -> list[tuple[str, int]]:
         """Return the most frequently searched-but-never-found codes (#10)."""
-        since = datetime.now(timezone.utc) - timedelta(days=365)
+        since = datetime.now(UTC) - timedelta(days=365)
         return list(await self._repository.top_queries_since(since, found=False, limit=limit))

@@ -18,13 +18,20 @@ class BlacklistService:
         self._repository = BlacklistRepository(session)
 
     async def add(
-        self, entry_type: BlacklistEntryType, value: str, *, reason: str | None = None, created_by: int | None = None
+        self,
+        entry_type: BlacklistEntryType,
+        value: str,
+        *,
+        reason: str | None = None,
+        created_by: int | None = None,
     ) -> BlacklistEntry:
         """Block a new value; reactivates an existing inactive entry instead of duplicating."""
         existing = await self._repository.find(entry_type, value)
         if existing is not None:
             raise InvalidInputError("Bu qiymat allaqachon blacklistda.")
-        entry = BlacklistEntry(entry_type=entry_type, value=value.strip(), reason=reason, created_by=created_by)
+        entry = BlacklistEntry(
+            entry_type=entry_type, value=value.strip(), reason=reason, created_by=created_by
+        )
         return await self._repository.add(entry)
 
     async def remove(self, entry_id: int) -> None:
@@ -51,9 +58,9 @@ class BlacklistService:
         """Convenience check combining Telegram ID and username blacklist rules."""
         if await self.is_blocked(BlacklistEntryType.TELEGRAM_ID, str(telegram_id)):
             return True
-        if username and await self.is_blocked(BlacklistEntryType.USERNAME, username.lstrip("@").lower()):
-            return True
-        return False
+        if username is None:
+            return False
+        return await self.is_blocked(BlacklistEntryType.USERNAME, username.lstrip("@").lower())
 
     async def contains_blacklisted_word(self, text: str) -> bool:
         """Return True when any active blacklisted word/phrase appears in ``text``."""

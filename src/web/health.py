@@ -62,12 +62,18 @@ async def handle_readiness(request: web.Request) -> web.Response:
     ready = all(checks.values())
     status_code = 200 if ready else 503
     return web.json_response(
-        {"status": "ready" if ready else "not_ready", "checks": checks, "metrics": metrics.snapshot()},
+        {
+            "status": "ready" if ready else "not_ready",
+            "checks": checks,
+            "metrics": metrics.snapshot(),
+        },
         status=status_code,
     )
 
 
-def build_web_app(*, settings: Settings, bot: Bot, dispatcher: Dispatcher, session_factory) -> web.Application:
+def build_web_app(
+    *, settings: Settings, bot: Bot, dispatcher: Dispatcher, session_factory
+) -> web.Application:
     """Build the aiohttp application used for health/readiness/liveness and webhooks."""
     app = web.Application()
     app["session_factory"] = session_factory
@@ -78,6 +84,7 @@ def build_web_app(*, settings: Settings, bot: Bot, dispatcher: Dispatcher, sessi
     app.router.add_get("/", handle_health)
 
     if settings.use_webhook:
+
         async def handle_webhook(request: web.Request) -> web.Response:
             """Receive Telegram webhook updates, verifying the secret token header."""
             if request.headers.get("X-Telegram-Bot-Api-Secret-Token") != settings.webhook_secret:

@@ -44,6 +44,10 @@ def build_discovered_chat_picker_keyboard(
         for chat in chats
     ]
     rows.append(
-        [InlineKeyboardButton(text="⬅️ Orqaga", callback_data=AdminMenuCallback(section=back_section).pack())]
+        [
+            InlineKeyboardButton(
+                text="⬅️ Orqaga", callback_data=AdminMenuCallback(section=back_section).pack()
+            )
+        ]
     )
     return InlineKeyboardMarkup(inline_keyboard=rows)

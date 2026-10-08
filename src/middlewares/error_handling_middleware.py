@@ -59,7 +59,9 @@ class ErrorHandlingMiddleware(BaseMiddleware):
             await self._reply(event, str(error))
         except Exception as error:  # noqa: BLE001 - last line of defense
             logger.error("handler.unexpected_error", error=str(error), exc_info=True)
-            await self._reply(event, "Kutilmagan xatolik yuz berdi. Iltimos, keyinroq urinib ko'ring.")
+            await self._reply(
+                event, "Kutilmagan xatolik yuz berdi. Iltimos, keyinroq urinib ko'ring."
+            )
         return None
 
     @staticmethod
@@ -72,7 +74,7 @@ class ErrorHandlingMiddleware(BaseMiddleware):
         ``isinstance`` checks would never match and every error would be
         swallowed silently, leaving the user with no response at all.
         """
-        target: TelegramObject = event
+        target: TelegramObject | None = event
         if isinstance(event, Update):
             target = event.message or event.callback_query or event.edited_message
         try:

@@ -26,7 +26,10 @@ class AdminLoginAttempt(TimestampMixin, BigIntPrimaryKeyMixin, Base):
     success: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     def __repr__(self) -> str:  # pragma: no cover
-        return f"AdminLoginAttempt(admin_telegram_id={self.admin_telegram_id!r}, success={self.success!r})"
+        return (
+            f"AdminLoginAttempt(admin_telegram_id={self.admin_telegram_id!r}, "
+            f"success={self.success!r})"
+        )
 
 
 class AdminSession(TimestampMixin, BigIntPrimaryKeyMixin, Base):

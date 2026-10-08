@@ -12,7 +12,7 @@ from src.keyboards.inline.admin_panel import build_back_to_admin_menu_keyboard
 from src.keyboards.inline.movie import build_movie_admin_actions_keyboard
 from src.services.log_service import LogService
 from src.services.movie_service import MovieService
-from src.states.movie_states import CodeManagementStates, MediaCenterStates
+from src.states.movie_states import MediaCenterStates
 from src.utils.exceptions import (
     CodeReservationConflictError,
     MovieCodeAlreadyExistsError,
@@ -100,7 +100,9 @@ async def reserve_code_command(
         return
     code = normalize_movie_code(parts[1])
     try:
-        await movie_service.reserve_code(code, reserved_by=message.from_user.id if message.from_user else 0)
+        await movie_service.reserve_code(
+            code, reserved_by=message.from_user.id if message.from_user else 0
+        )
     except (MovieCodeAlreadyExistsError, CodeReservationConflictError) as error:
         await message.answer(str(error))
         return

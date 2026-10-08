@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.backup_record import BackupRecord
 from src.repositories.base import BaseRepository
@@ -16,7 +15,9 @@ class BackupRecordRepository(BaseRepository[BackupRecord]):
 
     async def get_by_filename(self, filename: str) -> BackupRecord | None:
         """Return the metadata row for ``filename``, if any."""
-        result = await self._session.execute(select(BackupRecord).where(BackupRecord.filename == filename))
+        result = await self._session.execute(
+            select(BackupRecord).where(BackupRecord.filename == filename)
+        )
         return result.scalar_one_or_none()
 
     async def list_all(self, limit: int = 100, offset: int = 0) -> list[BackupRecord]:

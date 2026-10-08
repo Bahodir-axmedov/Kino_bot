@@ -52,4 +52,6 @@ class SystemLogService:
         offset: int = 0,
     ) -> list[SystemLog]:
         """Return log rows filtered by level/category, newest first."""
-        return await self._repository.list_filtered(level=level, category=category, limit=limit, offset=offset)
+        return await self._repository.list_filtered(
+            level=level, category=category, limit=limit, offset=offset
+        )

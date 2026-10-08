@@ -7,7 +7,11 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from src.core.plugin import register_admin_plugin
-from src.keyboards.callback_data import AdminMenuCallback, SettingsCategoryCallback, SettingsEditCallback
+from src.keyboards.callback_data import (
+    AdminMenuCallback,
+    SettingsCategoryCallback,
+    SettingsEditCallback,
+)
 from src.keyboards.inline.admin_panel import (
     build_back_to_admin_menu_keyboard,
     build_settings_categories_keyboard,
@@ -44,7 +48,9 @@ async def open_settings_center(callback: CallbackQuery) -> None:
 
 @router.callback_query(SettingsCategoryCallback.filter())
 async def open_settings_category(
-    callback: CallbackQuery, callback_data: SettingsCategoryCallback, settings_service: SettingsService
+    callback: CallbackQuery,
+    callback_data: SettingsCategoryCallback,
+    settings_service: SettingsService,
 ) -> None:
     """Show every setting key within one category, with current effective values."""
     values = await settings_service.list_by_category(callback_data.category)
@@ -107,6 +113,8 @@ async def receive_setting_value(
     message: Message, state: FSMContext, settings_service: SettingsService
 ) -> None:
     """Persist the admin-supplied value, converting it to the setting's declared type."""
+    if message.text is None:
+        return
     data = await state.get_data()
     key = data.get("settings_key")
     category = data.get("settings_category", "general")
@@ -130,7 +138,9 @@ async def receive_setting_value(
         await state.update_data(settings_key=key, settings_category=category)
         return
 
-    await settings_service.set(key, value, updated_by=message.from_user.id if message.from_user else None)
+    await settings_service.set(
+        key, value, updated_by=message.from_user.id if message.from_user else None
+    )
     values = await settings_service.list_by_category(category)
     entries = {
         k: {"value": v, "is_boolean": DEFAULT_SETTINGS[k]["type"].value == "boolean"}

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.media_collection import MediaCollection
 from src.repositories.base import BaseRepository
@@ -16,7 +15,9 @@ class MediaCollectionRepository(BaseRepository[MediaCollection]):
 
     async def get_by_slug(self, slug: str) -> MediaCollection | None:
         """Return the collection with the given unique ``slug``, if any."""
-        result = await self._session.execute(select(MediaCollection).where(MediaCollection.slug == slug))
+        result = await self._session.execute(
+            select(MediaCollection).where(MediaCollection.slug == slug)
+        )
         return result.scalar_one_or_none()
 
     async def list_ordered(self, *, active_only: bool = False) -> list[MediaCollection]:

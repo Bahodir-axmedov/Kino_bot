@@ -10,10 +10,12 @@ from aiogram.types import Message
 from src.core.plugin import register_user_plugin
 from src.keyboards.inline.force_sub import build_force_sub_gate_keyboard
 from src.keyboards.reply.main_menu import build_main_menu_keyboard
+from src.models.user import User
 from src.services.admin_service import AdminService
 from src.services.blacklist_service import BlacklistService
 from src.services.force_sub_service import ForceSubService
 from src.services.log_service import LogService
+from src.services.referral_reward_service import ReferralRewardService
 from src.services.settings_service import SettingsService
 from src.services.user_service import UserService
 from src.utils.formatters import format_force_sub_gate_message
@@ -36,9 +38,10 @@ async def handle_start(
     db_user: User | None = None,
     db_user_is_new: bool = False,
 ) -> None:
-    """Register the user, enforce Maintenance Mode / Blacklist / force-subscribe gates, then greet them.
+    """Register the user, enforce the entry gates, then greet them.
 
-    Per spec, the force-subscribe gate is checked on every /start (in addition
+    Gate order: Maintenance Mode / Blacklist, then force-subscribe. The
+    force-subscribe gate is checked on every /start (in addition
     to every code request in movie_code.py) and blocks every other bot
     function until the user has joined/confirmed every mandatory target.
     Maintenance Mode and Blacklist are checked first: only active admins may

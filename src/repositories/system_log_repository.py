@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.system_log import LogCategory, LogLevel, SystemLog
 from src.repositories.base import BaseRepository

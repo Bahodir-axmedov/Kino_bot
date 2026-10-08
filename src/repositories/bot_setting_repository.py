@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.bot_setting import BotSetting
 from src.repositories.base import BaseRepository
@@ -29,6 +28,9 @@ class BotSettingRepository(BaseRepository[BotSetting]):
     async def list_all(self, limit: int = 500, offset: int = 0) -> list[BotSetting]:
         """Return every setting row, ordered by category then key."""
         result = await self._session.execute(
-            select(BotSetting).order_by(BotSetting.category, BotSetting.key).limit(limit).offset(offset)
+            select(BotSetting)
+            .order_by(BotSetting.category, BotSetting.key)
+            .limit(limit)
+            .offset(offset)
         )
         return list(result.scalars().all())

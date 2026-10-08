@@ -15,7 +15,7 @@ from __future__ import annotations
 import csv
 import io
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from aiogram import Bot
 from aiogram.exceptions import TelegramBadRequest
@@ -225,7 +225,13 @@ class MovieService:
         return movie
 
     def assert_visible_to(
-        self, movie: Movie, *, is_admin: bool, is_subscribed: bool, has_referral: bool, is_premium: bool
+        self,
+        movie: Movie,
+        *,
+        is_admin: bool,
+        is_subscribed: bool,
+        has_referral: bool,
+        is_premium: bool,
     ) -> None:
         """Enforce a movie's visibility rule, raising ``VisibilityDeniedError`` if blocked."""
         rule = movie.visibility
@@ -251,7 +257,7 @@ class MovieService:
         the bot's own chat_id when a source message is known, otherwise falls
         back to trusting the stored id. Marks/unmarks ``is_broken`` accordingly.
         """
-        movie.last_verified_at = datetime.now(timezone.utc)
+        movie.last_verified_at = datetime.now(UTC)
         if movie.source_chat_id is None or movie.source_message_id is None:
             await self._repository.flush()
             return not movie.is_broken
@@ -317,7 +323,10 @@ class MovieService:
         limit: int = 20,
         offset: int = 0,
     ) -> list[Movie]:
-        """Search the catalogue by any combination of filters (#16: Kod/Nom/Janr/Til/Yil/Actor/Director/Country)."""
+        """Search the catalogue by any combination of filters.
+
+        Filters: kod / nom / janr / til / yil / aktyor / rejissyor / davlat.
+        """
         return list(
             await self._repository.search(
                 title=title,
@@ -360,7 +369,20 @@ class MovieService:
         buffer = io.StringIO()
         writer = csv.writer(buffer)
         writer.writerow(
-            ["code", "title", "telegram_file_id", "media_type", "genre", "language", "year", "quality", "visibility", "is_active", "views_count", "downloads_count"]
+            [
+                "code",
+                "title",
+                "telegram_file_id",
+                "media_type",
+                "genre",
+                "language",
+                "year",
+                "quality",
+                "visibility",
+                "is_active",
+                "views_count",
+                "downloads_count",
+            ]
         )
         for movie in movies:
             writer.writerow(
@@ -482,7 +504,9 @@ class MovieService:
                     collection_type=collection_type,
                     series_title=(row.get("series_title") or None),
                     season_number=int(row["season_number"]) if row.get("season_number") else None,
-                    episode_number=int(row["episode_number"]) if row.get("episode_number") else None,
+                    episode_number=(
+                        int(row["episode_number"]) if row.get("episode_number") else None
+                    ),
                     part_number=int(row["part_number"]) if row.get("part_number") else None,
                     added_by=added_by,
                 )

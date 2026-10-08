@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.admin_session import AdminLoginAttempt, AdminSession
 from src.repositories.base import BaseRepository
@@ -42,7 +41,7 @@ class AdminSessionRepository(BaseRepository[AdminSession]):
 
     async def list_active(self, admin_telegram_id: int) -> list[AdminSession]:
         """Return every non-revoked, non-expired session for one admin."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         result = await self._session.execute(
             select(AdminSession).where(
                 AdminSession.admin_telegram_id == admin_telegram_id,
@@ -55,7 +54,7 @@ class AdminSessionRepository(BaseRepository[AdminSession]):
     async def revoke_all(self, admin_telegram_id: int) -> int:
         """Revoke every active session for one admin ("Logout All"). Returns count revoked."""
         sessions = await self.list_active(admin_telegram_id)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         for session in sessions:
             session.revoked_at = now
         await self.flush()

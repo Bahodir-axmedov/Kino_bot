@@ -38,9 +38,7 @@ async def on_bot_membership_changed(
     chat = event.chat
     if chat.type not in ("channel", "group", "supergroup"):
         return
-    chat_type = (
-        DiscoveredChatType.CHANNEL if chat.type == "channel" else DiscoveredChatType.GROUP
-    )
+    chat_type = DiscoveredChatType.CHANNEL if chat.type == "channel" else DiscoveredChatType.GROUP
     status = _STATUS_MAP.get(event.new_chat_member.status, DiscoveredChatStatus.MEMBER)
     await discovered_chat_service.record_membership_change(
         chat_id=chat.id,

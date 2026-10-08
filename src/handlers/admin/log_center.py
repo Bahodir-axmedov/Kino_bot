@@ -7,7 +7,9 @@ from aiogram.types import CallbackQuery, Message
 
 from src.core.plugin import register_admin_plugin
 from src.keyboards.callback_data import AdminMenuCallback, LogFilterCallback
-from src.keyboards.inline.admin_panel import build_back_to_admin_menu_keyboard, build_log_filter_keyboard
+from src.keyboards.inline.admin_panel import (
+    build_log_filter_keyboard,
+)
 from src.models.system_log import LogLevel
 from src.services.system_log_service import SystemLogService
 
@@ -31,7 +33,10 @@ async def _render(level: str | None, system_log_service: SystemLogService) -> st
         lines.append("Yozuvlar topilmadi.")
     for entry in entries:
         icon = _LEVEL_ICON.get(entry.level, "⚪️")
-        lines.append(f"{icon} <code>{entry.created_at:%Y-%m-%d %H:%M}</code> [{entry.category.value}] {entry.action}")
+        lines.append(
+            f"{icon} <code>{entry.created_at:%Y-%m-%d %H:%M}</code> "
+            f"[{entry.category.value}] {entry.action}"
+        )
         lines.append(f"   {entry.description[:120]}")
     return "\n".join(lines)
 

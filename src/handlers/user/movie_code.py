@@ -111,15 +111,24 @@ async def _maybe_send_ad(bot: Bot, chat_id: int, campaign: AdCampaign | None) ->
     reply_markup = None
     if campaign.button_text and campaign.button_url:
         reply_markup = InlineKeyboardMarkup(
-            inline_keyboard=[[InlineKeyboardButton(text=campaign.button_text, url=campaign.button_url)]]
+            inline_keyboard=[
+                [InlineKeyboardButton(text=campaign.button_text, url=campaign.button_url)]
+            ]
         )
     if campaign.content_type is AdContentType.TEXT:
         await bot.send_message(chat_id=chat_id, text=campaign.text or "", reply_markup=reply_markup)
         return
     method_name = _AD_SENDERS.get(campaign.content_type, "send_photo")
     method = getattr(bot, method_name)
-    file_kwarg = {"send_photo": "photo", "send_video": "video", "send_animation": "animation"}[method_name]
-    await method(chat_id=chat_id, **{file_kwarg: campaign.file_id}, caption=campaign.text, reply_markup=reply_markup)
+    file_kwarg = {"send_photo": "photo", "send_video": "video", "send_animation": "animation"}[
+        method_name
+    ]
+    await method(
+        chat_id=chat_id,
+        **{file_kwarg: campaign.file_id},
+        caption=campaign.text,
+        reply_markup=reply_markup,
+    )
 
 
 async def _try_deliver(
@@ -269,7 +278,11 @@ async def handle_force_sub_recheck(
     ``movie_code == "-"`` means this recheck originated from the /start gate
     (no pending delivery -- just unblock the main menu on success).
     """
-    if callback.from_user is None or not isinstance(callback.message, Message) or callback.bot is None:
+    if (
+        callback.from_user is None
+        or not isinstance(callback.message, Message)
+        or callback.bot is None
+    ):
         await callback.answer()
         return
 

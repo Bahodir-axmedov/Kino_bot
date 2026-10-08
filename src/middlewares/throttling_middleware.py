@@ -40,8 +40,6 @@ class ThrottlingMiddleware(BaseMiddleware):
             now = time.monotonic()
             elapsed = now - self._last_seen[user.id]
             if elapsed < self._min_interval:
-                raise RateLimitExceededError(
-                    "Iltimos, biroz kuting va qayta urinib ko'ring."
-                )
+                raise RateLimitExceededError("Iltimos, biroz kuting va qayta urinib ko'ring.")
             self._last_seen[user.id] = now
         return await handler(event, data)

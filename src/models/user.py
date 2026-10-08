@@ -62,7 +62,7 @@ class User(TimestampMixin, Base):
     )
     last_active_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    referrer: Mapped["User | None"] = relationship(
+    referrer: Mapped[User | None] = relationship(
         "User", remote_side="User.telegram_id", foreign_keys=[referred_by]
     )
 

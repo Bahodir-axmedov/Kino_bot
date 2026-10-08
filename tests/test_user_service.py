@@ -20,7 +20,9 @@ async def test_get_or_register_creates_new_user(async_session: AsyncSession) -> 
 
 
 @pytest.mark.asyncio
-async def test_get_or_register_returns_existing_user_on_second_call(async_session: AsyncSession) -> None:
+async def test_get_or_register_returns_existing_user_on_second_call(
+    async_session: AsyncSession,
+) -> None:
     service = UserService(async_session)
     await service.get_or_register(
         telegram_id=222, username="bob", first_name="Bob", last_name=None, language_code="uz"

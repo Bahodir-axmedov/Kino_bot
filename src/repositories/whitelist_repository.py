@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.whitelist_entry import WhitelistEntry, WhitelistEntryType
 from src.repositories.base import BaseRepository

@@ -11,18 +11,25 @@ from __future__ import annotations
 
 import hashlib
 import secrets
-from datetime import datetime, timedelta, timezone
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.admin import AdminUser
 from src.models.admin_session import AdminLoginAttempt, AdminSession
 from src.repositories.admin_repository import AdminRepository
-from src.repositories.admin_session_repository import AdminLoginAttemptRepository, AdminSessionRepository
+from src.repositories.admin_session_repository import (
+    AdminLoginAttemptRepository,
+    AdminSessionRepository,
+)
 from src.services.settings_service import SettingsService
-from src.utils.exceptions import AdminLockedOutError, InvalidTwoFactorCodeError, PermissionDeniedError
+from src.utils.exceptions import (
+    AdminLockedOutError,
+    InvalidTwoFactorCodeError,
+    PermissionDeniedError,
+)
 from src.utils.totp import generate_secret, provisioning_uri, verify_code
-from dataclasses import dataclass
 
 
 @dataclass(frozen=True, slots=True)
@@ -47,7 +54,9 @@ def _verify_pin(pin: str, stored: str) -> bool:
         salt, digest = stored.split("$", 1)
     except ValueError:
         return False
-    candidate = hashlib.pbkdf2_hmac("sha256", pin.encode("utf-8"), bytes.fromhex(salt), 200_000).hex()
+    candidate = hashlib.pbkdf2_hmac(
+        "sha256", pin.encode("utf-8"), bytes.fromhex(salt), 200_000
+    ).hex()
     return secrets.compare_digest(candidate, digest)
 
 
@@ -105,7 +114,7 @@ class AdminSecurityService:
         """Check whether the recent-failure count exceeds the configured threshold."""
         max_attempts = int(await self._settings.get("admin_login_max_attempts"))
         lockout_minutes = int(await self._settings.get("admin_login_lockout_minutes"))
-        since = datetime.now(timezone.utc) - timedelta(minutes=lockout_minutes)
+        since = datetime.now(UTC) - timedelta(minutes=lockout_minutes)
         failed_count = await self._attempt_repository.recent_failed_count(admin_telegram_id, since)
         return failed_count >= max_attempts
 
@@ -120,19 +129,28 @@ class AdminSecurityService:
         if await self._is_locked_out(admin_telegram_id):
             lockout_minutes = int(await self._settings.get("admin_login_lockout_minutes"))
             raise AdminLockedOutError(
-                f"Juda ko'p noto'g'ri urinish. {lockout_minutes} daqiqadan so'ng qayta urinib ko'ring."
+                f"Juda ko'p noto'g'ri urinish. {lockout_minutes} daqiqadan so'ng "
+                "qayta urinib ko'ring."
             )
 
         admin = await self._admin_repository.get_by_telegram_id(admin_telegram_id)
-        pin_ok = admin is not None and admin.login_pin_hash is not None and _verify_pin(pin, admin.login_pin_hash)
+        pin_ok = (
+            admin is not None
+            and admin.login_pin_hash is not None
+            and _verify_pin(pin, admin.login_pin_hash)
+        )
         two_factor_ok = True
         if pin_ok and admin is not None and admin.two_factor_enabled:
             two_factor_ok = bool(
-                two_factor_code and admin.two_factor_secret and verify_code(admin.two_factor_secret, two_factor_code)
+                two_factor_code
+                and admin.two_factor_secret
+                and verify_code(admin.two_factor_secret, two_factor_code)
             )
 
         success = bool(pin_ok and two_factor_ok)
-        await self._attempt_repository.add(AdminLoginAttempt(admin_telegram_id=admin_telegram_id, success=success))
+        await self._attempt_repository.add(
+            AdminLoginAttempt(admin_telegram_id=admin_telegram_id, success=success)
+        )
 
         if not pin_ok:
             raise PermissionDeniedError("PIN noto'g'ri.")
@@ -140,7 +158,7 @@ class AdminSecurityService:
             raise InvalidTwoFactorCodeError("2FA kodi noto'g'ri.")
 
         timeout_minutes = int(await self._settings.get("admin_session_timeout_minutes"))
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         new_session = AdminSession(
             admin_telegram_id=admin_telegram_id,
             session_token=secrets.token_urlsafe(32),
@@ -157,7 +175,7 @@ class AdminSecurityService:
         session_row = await self._session_repository.get_by_token(session_token)
         if session_row is None or not session_row.is_active:
             return None
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if session_row.expires_at <= now:
             return None
         timeout_minutes = int(await self._settings.get("admin_session_timeout_minutes"))

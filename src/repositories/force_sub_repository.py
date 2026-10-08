@@ -31,8 +31,8 @@ class ForceSubRepository(BaseRepository[ForceSubChannel]):
         result = await self._session.execute(statement)
         return result.scalars().all()
 
-    async def list_all(self) -> Sequence[ForceSubChannel]:
-        """Return every configured mandatory-subscription channel."""
+    async def list_ordered(self) -> Sequence[ForceSubChannel]:
+        """Return every configured mandatory-subscription channel (position-ordered)."""
         statement = select(ForceSubChannel).order_by(ForceSubChannel.position.asc())
         result = await self._session.execute(statement)
         return result.scalars().all()

@@ -7,8 +7,10 @@ anywhere else in the app) needs to change.
 
 from __future__ import annotations
 
+from typing import cast
+
 import structlog
-from sqlalchemy import event, text
+from sqlalchemy import Table, event, text
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -83,9 +85,7 @@ async def init_database(settings: Settings, *, create_all: bool = True) -> Async
     global _engine, _session_factory
 
     _engine = _build_engine(settings)
-    _session_factory = async_sessionmaker(
-        bind=_engine, expire_on_commit=False, class_=AsyncSession
-    )
+    _session_factory = async_sessionmaker(bind=_engine, expire_on_commit=False, class_=AsyncSession)
 
     if create_all:
         async with _engine.begin() as connection:
@@ -139,7 +139,7 @@ def _drop_obsolete_source_chat_fk(sync_connection) -> None:  # noqa: ANN001
     for index_name in droppable_indexes:
         sync_connection.exec_driver_sql(f'DROP INDEX "{index_name}"')
     # Recreate ``movies`` (and its indexes) from the current, FK-free model.
-    Movie.__table__.create(bind=sync_connection)
+    cast(Table, Movie.__table__).create(bind=sync_connection)
     sync_connection.exec_driver_sql(
         f"INSERT INTO movies ({column_csv}) SELECT {column_csv} FROM _movies_pre_fk_drop"
     )

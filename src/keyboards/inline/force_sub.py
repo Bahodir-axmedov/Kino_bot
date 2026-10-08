@@ -64,7 +64,14 @@ def build_platform_selection_keyboard() -> InlineKeyboardMarkup:
             row = []
     if row:
         rows.append(row)
-    rows.append([InlineKeyboardButton(text="Bekor qilish", callback_data=ForceSubActionCallback(action="cancel_add", channel_id=0).pack())])
+    rows.append(
+        [
+            InlineKeyboardButton(
+                text="Bekor qilish",
+                callback_data=ForceSubActionCallback(action="cancel_add", channel_id=0).pack(),
+            )
+        ]
+    )
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
@@ -119,7 +126,9 @@ def build_force_sub_admin_list_keyboard(
             [
                 InlineKeyboardButton(
                     text=(label + " " + channel.title)[:64],
-                    callback_data=ForceSubActionCallback(action="noop", channel_id=channel.id).pack(),
+                    callback_data=ForceSubActionCallback(
+                        action="noop", channel_id=channel.id
+                    ).pack(),
                 )
             ]
         )
@@ -127,7 +136,9 @@ def build_force_sub_admin_list_keyboard(
             [
                 InlineKeyboardButton(
                     text=status_icon,
-                    callback_data=ForceSubActionCallback(action="toggle", channel_id=channel.id).pack(),
+                    callback_data=ForceSubActionCallback(
+                        action="toggle", channel_id=channel.id
+                    ).pack(),
                 ),
                 InlineKeyboardButton(
                     text=mandatory_icon,
@@ -137,7 +148,9 @@ def build_force_sub_admin_list_keyboard(
                 ),
                 InlineKeyboardButton(
                     text="O'chirish",
-                    callback_data=ForceSubActionCallback(action="remove", channel_id=channel.id).pack(),
+                    callback_data=ForceSubActionCallback(
+                        action="remove", channel_id=channel.id
+                    ).pack(),
                 ),
             ]
         )

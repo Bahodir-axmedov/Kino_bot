@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import asyncio
-import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import structlog
 from aiogram import Bot
-from aiogram.exceptions import TelegramForbiddenError, TelegramRetryAfter, TelegramAPIError
+from aiogram.exceptions import TelegramAPIError, TelegramForbiddenError, TelegramRetryAfter
 from aiogram.types import InlineKeyboardMarkup
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -66,7 +65,7 @@ class BroadcastService:
         recipient_ids = await self._users.list_all_ids(exclude_banned=True)
         campaign.total_users = len(recipient_ids)
         campaign.status = BroadcastStatus.RUNNING
-        campaign.started_at = datetime.now(timezone.utc)
+        campaign.started_at = datetime.now(UTC)
         await self._repository.flush()
 
         reply_markup = (
@@ -87,7 +86,7 @@ class BroadcastService:
             await asyncio.sleep(_BATCH_DELAY_SECONDS)
 
         campaign.status = BroadcastStatus.COMPLETED
-        campaign.finished_at = datetime.now(timezone.utc)
+        campaign.finished_at = datetime.now(UTC)
         await self._repository.flush()
         return campaign
 
@@ -143,6 +142,4 @@ class BroadcastService:
     async def list_failed_users(self, broadcast_id: int) -> list[dict[str, object]]:
         """Return the failed-delivery log for a campaign as plain dicts."""
         failed = await self._repository.list_failed_users(broadcast_id)
-        return [
-            {"telegram_id": item.telegram_id, "error": item.error_message} for item in failed
-        ]
+        return [{"telegram_id": item.telegram_id, "error": item.error_message} for item in failed]

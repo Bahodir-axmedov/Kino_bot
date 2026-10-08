@@ -54,9 +54,7 @@ async def open_media_sources_menu(
         else "Hozircha media manbalari yo'q. Botni kanal/guruhga qo'shing va tanlang."
     )
     if isinstance(callback.message, Message):
-        await callback.message.edit_text(
-            text, reply_markup=build_media_sources_keyboard(sources)
-        )
+        await callback.message.edit_text(text, reply_markup=build_media_sources_keyboard(sources))
     await callback.answer()
 
 
@@ -88,9 +86,7 @@ async def choose_source_type(
             "u avtomatik ravishda shu ro'yxatda paydo bo'ladi."
         )
         if isinstance(callback.message, Message):
-            await callback.message.edit_text(
-                text, reply_markup=build_back_to_admin_menu_keyboard()
-            )
+            await callback.message.edit_text(text, reply_markup=build_back_to_admin_menu_keyboard())
         await callback.answer()
         return
     if isinstance(callback.message, Message):
@@ -160,9 +156,7 @@ async def remove_source(
         )
     sources = await media_source_service.list_active()
     if isinstance(callback.message, Message):
-        await callback.message.edit_reply_markup(
-            reply_markup=build_media_sources_keyboard(sources)
-        )
+        await callback.message.edit_reply_markup(reply_markup=build_media_sources_keyboard(sources))
     await callback.answer("O'chirildi." if removed else "Topilmadi.")
 
 

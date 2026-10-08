@@ -5,15 +5,10 @@ from __future__ import annotations
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import (
-    Animation,
-    Audio,
     CallbackQuery,
-    Document,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     Message,
-    PhotoSize,
-    Video,
 )
 
 from src.core.plugin import register_admin_plugin
@@ -145,9 +140,7 @@ async def receive_description_and_save(
     log_service: LogService,
 ) -> None:
     """Capture the description and persist the new movie entry."""
-    description = (
-        message.text.strip() if message.text and message.text.strip() != "/skip" else None
-    )
+    description = message.text.strip() if message.text and message.text.strip() != "/skip" else None
     data = await state.get_data()
     await state.clear()
 
@@ -240,7 +233,9 @@ async def do_delete(
 
 
 @router.callback_query(MovieActionCallback.filter(F.action == "cancel_delete"))
-async def cancel_delete(callback: CallbackQuery, callback_data: MovieActionCallback, movie_service: MovieService) -> None:
+async def cancel_delete(
+    callback: CallbackQuery, callback_data: MovieActionCallback, movie_service: MovieService
+) -> None:
     """Cancel the delete confirmation and restore the movie action menu."""
     movie = await movie_service.get_by_id(callback_data.movie_id)
     if isinstance(callback.message, Message):
@@ -408,11 +403,7 @@ async def _render_movie_list_page(
     )
 
     if not movies:
-        text = (
-            "📋 Hozircha bironta kino yuklanmagan."
-            if page == 0
-            else "📋 Boshqa kino yo'q."
-        )
+        text = "📋 Hozircha bironta kino yuklanmagan." if page == 0 else "📋 Boshqa kino yo'q."
         keyboard_rows: list[list[InlineKeyboardButton]] = []
         pagination_row = build_pagination_row("movie_list", page, has_next=False)
         if pagination_row:
@@ -490,6 +481,8 @@ async def start_edit_code(callback: CallbackQuery, state: FSMContext) -> None:
 @router.message(EditCodeStates.waiting_for_movie_code, F.text)
 async def receive_code_to_edit(message: Message, state: FSMContext) -> None:
     """Capture the existing code and ask for the replacement."""
+    if message.text is None:
+        return
     await state.update_data(code=normalize_movie_code(message.text))
     await state.set_state(EditCodeStates.waiting_for_new_code)
     await message.answer("🆕 Yangi kodni yuboring:")
@@ -500,6 +493,8 @@ async def apply_code_replace(
     message: Message, state: FSMContext, movie_service: MovieService, log_service: LogService
 ) -> None:
     """Apply the new code to the movie, if it is not already taken."""
+    if message.text is None:
+        return
     data = await state.get_data()
     await state.clear()
     new_code = normalize_movie_code(message.text)
@@ -532,6 +527,8 @@ async def start_edit_caption(callback: CallbackQuery, state: FSMContext) -> None
 @router.message(EditCaptionStates.waiting_for_movie_code, F.text)
 async def receive_code_for_caption(message: Message, state: FSMContext) -> None:
     """Capture the target code and ask for the new caption."""
+    if message.text is None:
+        return
     await state.update_data(code=normalize_movie_code(message.text))
     await state.set_state(EditCaptionStates.waiting_for_new_caption)
     await message.answer("📝 Yangi caption matnini yuboring:")
@@ -542,6 +539,8 @@ async def apply_caption_replace(
     message: Message, state: FSMContext, movie_service: MovieService, log_service: LogService
 ) -> None:
     """Apply the new caption text to the movie."""
+    if message.text is None:
+        return
     data = await state.get_data()
     await state.clear()
     new_caption = validate_non_empty_text(message.text, field_name="Caption", max_length=1024)

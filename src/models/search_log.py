@@ -21,7 +21,9 @@ class SearchLog(Base, BigIntPrimaryKeyMixin):
 
     query_text: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     query_type: Mapped[str] = mapped_column(String(32), nullable=False, default="code")
-    platform: Mapped[str] = mapped_column(String(32), nullable=False, default="bot", server_default="bot")
+    platform: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="bot", server_default="bot"
+    )
     found: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
     user_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(

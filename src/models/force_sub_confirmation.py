@@ -25,7 +25,10 @@ class ForceSubConfirmation(TimestampMixin, BigIntPrimaryKeyMixin, Base):
         BigInteger, ForeignKey("users.telegram_id", ondelete="CASCADE"), nullable=False, index=True
     )
     channel_id: Mapped[int] = mapped_column(
-        BigInteger, ForeignKey("force_sub_channels.id", ondelete="CASCADE"), nullable=False, index=True
+        BigInteger,
+        ForeignKey("force_sub_channels.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
 
     def __repr__(self) -> str:  # pragma: no cover

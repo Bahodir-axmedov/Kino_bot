@@ -18,13 +18,19 @@ async def show_stats(callback: CallbackQuery, stats_service: StatsService) -> No
     """Compute and render the statistics dashboard."""
     stats = await stats_service.build_dashboard()
 
-    top_views = "\n".join(
-        f"  • {movie.title} — {movie.views_count} 👁" for movie in stats.top_movies_by_views
-    ) or "  —"
-    top_downloads = "\n".join(
-        f"  • {movie.title} — {movie.downloads_count} ⬇️"
-        for movie in stats.top_movies_by_downloads
-    ) or "  —"
+    top_views = (
+        "\n".join(
+            f"  • {movie.title} — {movie.views_count} 👁" for movie in stats.top_movies_by_views
+        )
+        or "  —"
+    )
+    top_downloads = (
+        "\n".join(
+            f"  • {movie.title} — {movie.downloads_count} ⬇️"
+            for movie in stats.top_movies_by_downloads
+        )
+        or "  —"
+    )
 
     text = (
         "📊 <b>Statistika</b>\n\n"

@@ -28,9 +28,7 @@ class PaymentRequestRepository(BaseRepository[PaymentRequest]):
     async def count_by_status(self, status: PaymentStatus) -> int:
         """Return how many payment requests are currently in ``status``."""
         result = await self._session.execute(
-            select(func.count())
-            .select_from(PaymentRequest)
-            .where(PaymentRequest.status == status)
+            select(func.count()).select_from(PaymentRequest).where(PaymentRequest.status == status)
         )
         return int(result.scalar_one())
 

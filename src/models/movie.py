@@ -75,7 +75,9 @@ class Movie(TimestampMixin, BigIntPrimaryKeyMixin, Base):
     # ever invalidates the cached one (file ids can expire on the source
     # message being deleted).
     source_message_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
-    media_type: Mapped[MediaType] = mapped_column(SAEnum(MediaType, name="media_type"), nullable=False)
+    media_type: Mapped[MediaType] = mapped_column(
+        SAEnum(MediaType, name="media_type"), nullable=False
+    )
     caption: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     genre: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
@@ -105,7 +107,9 @@ class Movie(TimestampMixin, BigIntPrimaryKeyMixin, Base):
         server_default=MovieVisibility.PUBLIC.value,
     )
     is_broken: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    last_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_verified_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     # --- Multi Media Source / Media Collection (#1, #2) ---------------------
     collection_type: Mapped[MovieCollectionType] = mapped_column(
@@ -130,7 +134,10 @@ class Movie(TimestampMixin, BigIntPrimaryKeyMixin, Base):
 
     # --- Media Collections (V4.0): curated showcase shelf, e.g. Marvel/DC ---
     collection_id: Mapped[int | None] = mapped_column(
-        BigInteger, ForeignKey("media_collections.id", ondelete="SET NULL"), nullable=True, index=True
+        BigInteger,
+        ForeignKey("media_collections.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
     )
 
     def __repr__(self) -> str:  # pragma: no cover

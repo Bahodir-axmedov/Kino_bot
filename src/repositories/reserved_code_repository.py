@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 
@@ -24,7 +24,7 @@ class ReservedCodeRepository(BaseRepository[ReservedCode]):
         reservation = result.scalar_one_or_none()
         if reservation is None:
             return None
-        if reservation.expires_at is not None and reservation.expires_at < datetime.now(timezone.utc):
+        if reservation.expires_at is not None and reservation.expires_at < datetime.now(UTC):
             reservation.released = True
             await self.flush()
             return None

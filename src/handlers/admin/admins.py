@@ -4,9 +4,7 @@ from __future__ import annotations
 
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message
-
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from src.config import Settings
 from src.core.plugin import register_admin_plugin
@@ -36,7 +34,13 @@ def _build_admins_keyboard(admins: list, settings: Settings) -> InlineKeyboardMa
                 )
             ]
         )
-    rows.append([InlineKeyboardButton(text="⬅️ Orqaga", callback_data=AdminMenuCallback(section="root").pack())])
+    rows.append(
+        [
+            InlineKeyboardButton(
+                text="⬅️ Orqaga", callback_data=AdminMenuCallback(section="root").pack()
+            )
+        ]
+    )
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
@@ -50,10 +54,15 @@ async def open_admins_menu(
     for admin in admins:
         lines.append(f"• <code>{admin.telegram_id}</code> — {admin.role.value}")
     lines.append("")
-    lines.append("Yangi admin qo'shish uchun Telegram ID yuboring, yoki quyidagi ro'yxatdan birini olib tashlang:")
+    lines.append(
+        "Yangi admin qo'shish uchun Telegram ID yuboring, yoki quyidagi "
+        "ro'yxatdan birini olib tashlang:"
+    )
     await state.set_state(AddAdminStates.waiting_for_telegram_id)
     if isinstance(callback.message, Message):
-        await callback.message.edit_text("\n".join(lines), reply_markup=_build_admins_keyboard(admins, settings))
+        await callback.message.edit_text(
+            "\n".join(lines), reply_markup=_build_admins_keyboard(admins, settings)
+        )
     await callback.answer()
 
 
@@ -86,15 +95,22 @@ async def remove_admin(
     for admin in admins:
         lines.append(f"• <code>{admin.telegram_id}</code> — {admin.role.value}")
     lines.append("")
-    lines.append("Yangi admin qo'shish uchun Telegram ID yuboring, yoki quyidagi ro'yxatdan birini olib tashlang:")
+    lines.append(
+        "Yangi admin qo'shish uchun Telegram ID yuboring, yoki quyidagi "
+        "ro'yxatdan birini olib tashlang:"
+    )
     if isinstance(callback.message, Message):
-        await callback.message.edit_text("\n".join(lines), reply_markup=_build_admins_keyboard(admins, settings))
+        await callback.message.edit_text(
+            "\n".join(lines), reply_markup=_build_admins_keyboard(admins, settings)
+        )
     await callback.answer("✅ Olib tashlandi." if removed else "Topilmadi.")
 
 
 @router.message(AddAdminStates.waiting_for_telegram_id, F.text)
 async def receive_new_admin_id(message: Message, state: FSMContext) -> None:
     """Capture the candidate admin's Telegram id and ask for a role."""
+    if message.text is None:
+        return
     try:
         telegram_id = validate_telegram_id(message.text)
     except InvalidInputError as error:
@@ -113,6 +129,8 @@ async def receive_new_admin_role(
     log_service: LogService,
 ) -> None:
     """Persist the new administrator with the chosen role."""
+    if message.text is None:
+        return
     data = await state.get_data()
     await state.clear()
     role_text = message.text.strip().lower()

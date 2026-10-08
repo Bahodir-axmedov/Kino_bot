@@ -51,7 +51,9 @@ def build_movie_edit_field_keyboard(movie_id: int) -> InlineKeyboardMarkup:
             ),
             InlineKeyboardButton(
                 text="📄 Tavsifi",
-                callback_data=MovieActionCallback(action="edit_description", movie_id=movie_id).pack(),
+                callback_data=MovieActionCallback(
+                    action="edit_description", movie_id=movie_id
+                ).pack(),
             ),
         ],
         [
@@ -76,7 +78,9 @@ def build_movie_delete_confirm_keyboard(movie_id: int) -> InlineKeyboardMarkup:
         [
             InlineKeyboardButton(
                 text="✅ Ha, o'chirish",
-                callback_data=MovieActionCallback(action="confirm_delete", movie_id=movie_id).pack(),
+                callback_data=MovieActionCallback(
+                    action="confirm_delete", movie_id=movie_id
+                ).pack(),
             ),
             InlineKeyboardButton(
                 text="❌ Bekor qilish",

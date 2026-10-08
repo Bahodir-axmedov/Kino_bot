@@ -74,11 +74,14 @@ def build_admin_main_menu_keyboard() -> InlineKeyboardMarkup:
 
 def _category_submenu_keyboard(rows: list[list[InlineKeyboardButton]]) -> InlineKeyboardMarkup:
     """Append a shared "back to categories" row to a category submenu."""
-    rows = [*rows, [
-        InlineKeyboardButton(
-            text="⬅️ Bo'limlar", callback_data=AdminMenuCallback(section="root").pack()
-        )
-    ]]
+    rows = [
+        *rows,
+        [
+            InlineKeyboardButton(
+                text="⬅️ Bo'limlar", callback_data=AdminMenuCallback(section="root").pack()
+            )
+        ],
+    ]
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
@@ -88,7 +91,8 @@ def build_admin_category_content_keyboard() -> InlineKeyboardMarkup:
         [
             [
                 InlineKeyboardButton(
-                    text="🎬 Kino boshqaruvi", callback_data=AdminMenuCallback(section="movies").pack()
+                    text="🎬 Kino boshqaruvi",
+                    callback_data=AdminMenuCallback(section="movies").pack(),
                 )
             ],
             [
@@ -119,7 +123,8 @@ def build_admin_category_users_keyboard() -> InlineKeyboardMarkup:
         [
             [
                 InlineKeyboardButton(
-                    text="👥 Foydalanuvchilar", callback_data=AdminMenuCallback(section="users").pack()
+                    text="👥 Foydalanuvchilar",
+                    callback_data=AdminMenuCallback(section="users").pack(),
                 )
             ],
             [
@@ -374,15 +379,26 @@ def key_label(key: str) -> str:
 def build_settings_categories_keyboard(categories: list[str]) -> InlineKeyboardMarkup:
     """Return one button per Settings Center category, two per row."""
     buttons = [
-        InlineKeyboardButton(text=category_label(category), callback_data=SettingsCategoryCallback(category=category).pack())
+        InlineKeyboardButton(
+            text=category_label(category),
+            callback_data=SettingsCategoryCallback(category=category).pack(),
+        )
         for category in categories
     ]
     rows = [buttons[i : i + 2] for i in range(0, len(buttons), 2)]
-    rows.append([InlineKeyboardButton(text="⬅️ Orqaga", callback_data=AdminMenuCallback(section="root").pack())])
+    rows.append(
+        [
+            InlineKeyboardButton(
+                text="⬅️ Orqaga", callback_data=AdminMenuCallback(section="root").pack()
+            )
+        ]
+    )
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
-def build_settings_category_keyboard(category: str, entries: dict[str, dict[str, Any]]) -> InlineKeyboardMarkup:
+def build_settings_category_keyboard(
+    category: str, entries: dict[str, dict[str, Any]]
+) -> InlineKeyboardMarkup:
     """Return one button per setting key in a category (booleans show a ✅/❌ toggle)."""
     rows = []
     for key, info in entries.items():
@@ -395,9 +411,15 @@ def build_settings_category_keyboard(category: str, entries: dict[str, dict[str,
             if len(shown) > 20:
                 shown = shown[:20] + "…"
             text = f"✏️ {key_label(key)}: {shown}"
-        rows.append([InlineKeyboardButton(text=text, callback_data=SettingsEditCallback(key=key).pack())])
+        rows.append(
+            [InlineKeyboardButton(text=text, callback_data=SettingsEditCallback(key=key).pack())]
+        )
     rows.append(
-        [InlineKeyboardButton(text="⬅️ Kategoriyalar", callback_data=AdminMenuCallback(section="settings").pack())]
+        [
+            InlineKeyboardButton(
+                text="⬅️ Kategoriyalar", callback_data=AdminMenuCallback(section="settings").pack()
+            )
+        ]
     )
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
@@ -414,23 +436,45 @@ def build_collections_keyboard(collections: list) -> InlineKeyboardMarkup:
             [
                 InlineKeyboardButton(
                     text=f"{state_icon} {collection.name}",
-                    callback_data=CollectionActionCallback(action="toggle", collection_id=collection.id).pack(),
+                    callback_data=CollectionActionCallback(
+                        action="toggle", collection_id=collection.id
+                    ).pack(),
                 ),
                 InlineKeyboardButton(
-                    text="⬆️", callback_data=CollectionActionCallback(action="up", collection_id=collection.id).pack()
+                    text="⬆️",
+                    callback_data=CollectionActionCallback(
+                        action="up", collection_id=collection.id
+                    ).pack(),
                 ),
                 InlineKeyboardButton(
-                    text="⬇️", callback_data=CollectionActionCallback(action="down", collection_id=collection.id).pack()
+                    text="⬇️",
+                    callback_data=CollectionActionCallback(
+                        action="down", collection_id=collection.id
+                    ).pack(),
                 ),
                 InlineKeyboardButton(
-                    text="🗑", callback_data=CollectionActionCallback(action="delete", collection_id=collection.id).pack()
+                    text="🗑",
+                    callback_data=CollectionActionCallback(
+                        action="delete", collection_id=collection.id
+                    ).pack(),
                 ),
             ]
         )
     rows.append(
-        [InlineKeyboardButton(text="➕ Yangi collection", callback_data=CollectionActionCallback(action="create", collection_id=0).pack())]
+        [
+            InlineKeyboardButton(
+                text="➕ Yangi collection",
+                callback_data=CollectionActionCallback(action="create", collection_id=0).pack(),
+            )
+        ]
     )
-    rows.append([InlineKeyboardButton(text="⬅️ Orqaga", callback_data=AdminMenuCallback(section="root").pack())])
+    rows.append(
+        [
+            InlineKeyboardButton(
+                text="⬅️ Orqaga", callback_data=AdminMenuCallback(section="root").pack()
+            )
+        ]
+    )
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
@@ -440,10 +484,21 @@ def build_collections_keyboard(collections: list) -> InlineKeyboardMarkup:
 def build_blacklist_type_keyboard() -> InlineKeyboardMarkup:
     """Return one button per :class:`BlacklistEntryType`."""
     rows = [
-        [InlineKeyboardButton(text=entry_type.value, callback_data=BlacklistTypeCallback(entry_type=entry_type.value).pack())]
+        [
+            InlineKeyboardButton(
+                text=entry_type.value,
+                callback_data=BlacklistTypeCallback(entry_type=entry_type.value).pack(),
+            )
+        ]
         for entry_type in BlacklistEntryType
     ]
-    rows.append([InlineKeyboardButton(text="⬅️ Orqaga", callback_data=AdminMenuCallback(section="root").pack())])
+    rows.append(
+        [
+            InlineKeyboardButton(
+                text="⬅️ Orqaga", callback_data=AdminMenuCallback(section="root").pack()
+            )
+        ]
+    )
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
@@ -458,29 +513,71 @@ def build_blacklist_entries_keyboard(entry_type: str, entries: list) -> InlineKe
         ]
         for entry in entries
     ]
-    rows.append([InlineKeyboardButton(text="➕ Qo'shish", callback_data=BlacklistTypeCallback(entry_type=entry_type).pack())])
-    rows.append([InlineKeyboardButton(text="⬅️ Turlar", callback_data=AdminMenuCallback(section="blacklist").pack())])
+    rows.append(
+        [
+            InlineKeyboardButton(
+                text="➕ Qo'shish",
+                callback_data=BlacklistTypeCallback(entry_type=entry_type).pack(),
+            )
+        ]
+    )
+    rows.append(
+        [
+            InlineKeyboardButton(
+                text="⬅️ Turlar", callback_data=AdminMenuCallback(section="blacklist").pack()
+            )
+        ]
+    )
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 def build_whitelist_type_keyboard() -> InlineKeyboardMarkup:
     """Return one button per :class:`WhitelistEntryType`."""
     rows = [
-        [InlineKeyboardButton(text=entry_type.value, callback_data=WhitelistTypeCallback(entry_type=entry_type.value).pack())]
+        [
+            InlineKeyboardButton(
+                text=entry_type.value,
+                callback_data=WhitelistTypeCallback(entry_type=entry_type.value).pack(),
+            )
+        ]
         for entry_type in WhitelistEntryType
     ]
-    rows.append([InlineKeyboardButton(text="⬅️ Orqaga", callback_data=AdminMenuCallback(section="root").pack())])
+    rows.append(
+        [
+            InlineKeyboardButton(
+                text="⬅️ Orqaga", callback_data=AdminMenuCallback(section="root").pack()
+            )
+        ]
+    )
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 def build_whitelist_entries_keyboard(entry_type: str, entries: list) -> InlineKeyboardMarkup:
     """Return one row per whitelist entry of a type, with a remove button, plus an "add" row."""
     rows = [
-        [InlineKeyboardButton(text=f"🟢 {entry.value}", callback_data=WhitelistActionCallback(entry_id=entry.id).pack())]
+        [
+            InlineKeyboardButton(
+                text=f"🟢 {entry.value}",
+                callback_data=WhitelistActionCallback(entry_id=entry.id).pack(),
+            )
+        ]
         for entry in entries
     ]
-    rows.append([InlineKeyboardButton(text="➕ Qo'shish", callback_data=WhitelistTypeCallback(entry_type=entry_type).pack())])
-    rows.append([InlineKeyboardButton(text="⬅️ Turlar", callback_data=AdminMenuCallback(section="whitelist").pack())])
+    rows.append(
+        [
+            InlineKeyboardButton(
+                text="➕ Qo'shish",
+                callback_data=WhitelistTypeCallback(entry_type=entry_type).pack(),
+            )
+        ]
+    )
+    rows.append(
+        [
+            InlineKeyboardButton(
+                text="⬅️ Turlar", callback_data=AdminMenuCallback(section="whitelist").pack()
+            )
+        ]
+    )
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
@@ -500,12 +597,26 @@ def build_ads_keyboard(campaigns: list) -> InlineKeyboardMarkup:
                     callback_data=AdActionCallback(action="toggle", campaign_id=campaign.id).pack(),
                 ),
                 InlineKeyboardButton(
-                    text="🗑", callback_data=AdActionCallback(action="delete", campaign_id=campaign.id).pack()
+                    text="🗑",
+                    callback_data=AdActionCallback(action="delete", campaign_id=campaign.id).pack(),
                 ),
             ]
         )
-    rows.append([InlineKeyboardButton(text="➕ Yangi reklama", callback_data=AdActionCallback(action="create", campaign_id=0).pack())])
-    rows.append([InlineKeyboardButton(text="⬅️ Orqaga", callback_data=AdminMenuCallback(section="root").pack())])
+    rows.append(
+        [
+            InlineKeyboardButton(
+                text="➕ Yangi reklama",
+                callback_data=AdActionCallback(action="create", campaign_id=0).pack(),
+            )
+        ]
+    )
+    rows.append(
+        [
+            InlineKeyboardButton(
+                text="⬅️ Orqaga", callback_data=AdminMenuCallback(section="root").pack()
+            )
+        ]
+    )
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
@@ -524,12 +635,28 @@ def build_security_keyboard(pin_set: bool, two_factor_enabled: bool) -> InlineKe
         [
             InlineKeyboardButton(
                 text=("🔓 2FA-ni o'chirish" if two_factor_enabled else "🔒 2FA-ni yoqish"),
-                callback_data=SecurityActionCallback(action=("disable_2fa" if two_factor_enabled else "enable_2fa")).pack(),
+                callback_data=SecurityActionCallback(
+                    action=("disable_2fa" if two_factor_enabled else "enable_2fa")
+                ).pack(),
             )
         ],
-        [InlineKeyboardButton(text="📋 Faol sessiyalar", callback_data=SecurityActionCallback(action="list_sessions").pack())],
-        [InlineKeyboardButton(text="🚪 Barcha sessiyalarni yopish", callback_data=SecurityActionCallback(action="logout_all").pack())],
-        [InlineKeyboardButton(text="⬅️ Orqaga", callback_data=AdminMenuCallback(section="root").pack())],
+        [
+            InlineKeyboardButton(
+                text="📋 Faol sessiyalar",
+                callback_data=SecurityActionCallback(action="list_sessions").pack(),
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text="🚪 Barcha sessiyalarni yopish",
+                callback_data=SecurityActionCallback(action="logout_all").pack(),
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text="⬅️ Orqaga", callback_data=AdminMenuCallback(section="root").pack()
+            )
+        ],
     ]
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
@@ -546,15 +673,31 @@ def build_log_filter_keyboard() -> InlineKeyboardMarkup:
     """Return one filter button per log level, plus "all"."""
     rows = [
         [
-            InlineKeyboardButton(text="🟢 Info", callback_data=LogFilterCallback(level="info").pack()),
-            InlineKeyboardButton(text="🟡 Warning", callback_data=LogFilterCallback(level="warning").pack()),
+            InlineKeyboardButton(
+                text="🟢 Info", callback_data=LogFilterCallback(level="info").pack()
+            ),
+            InlineKeyboardButton(
+                text="🟡 Warning", callback_data=LogFilterCallback(level="warning").pack()
+            ),
         ],
         [
-            InlineKeyboardButton(text="🔴 Error", callback_data=LogFilterCallback(level="error").pack()),
-            InlineKeyboardButton(text="⛔ Critical", callback_data=LogFilterCallback(level="critical").pack()),
+            InlineKeyboardButton(
+                text="🔴 Error", callback_data=LogFilterCallback(level="error").pack()
+            ),
+            InlineKeyboardButton(
+                text="⛔ Critical", callback_data=LogFilterCallback(level="critical").pack()
+            ),
         ],
-        [InlineKeyboardButton(text="📄 Barchasi", callback_data=LogFilterCallback(level="all").pack())],
-        [InlineKeyboardButton(text="⬅️ Orqaga", callback_data=AdminMenuCallback(section="root").pack())],
+        [
+            InlineKeyboardButton(
+                text="📄 Barchasi", callback_data=LogFilterCallback(level="all").pack()
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text="⬅️ Orqaga", callback_data=AdminMenuCallback(section="root").pack()
+            )
+        ],
     ]
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
@@ -565,12 +708,37 @@ def build_log_filter_keyboard() -> InlineKeyboardMarkup:
 def build_database_manager_keyboard() -> InlineKeyboardMarkup:
     """Return the Database Manager action menu (VACUUM/ANALYZE/REINDEX/optimize all)."""
     rows = [
-        [InlineKeyboardButton(text="🧹 VACUUM", callback_data=DatabaseActionCallback(action="vacuum").pack())],
-        [InlineKeyboardButton(text="📈 ANALYZE", callback_data=DatabaseActionCallback(action="analyze").pack())],
-        [InlineKeyboardButton(text="🧱 REINDEX", callback_data=DatabaseActionCallback(action="reindex").pack())],
-        [InlineKeyboardButton(text="⚡ To'liq optimizatsiya", callback_data=DatabaseActionCallback(action="optimize").pack())],
-        [InlineKeyboardButton(text="🔄 Yangilash", callback_data=DatabaseActionCallback(action="refresh").pack())],
-        [InlineKeyboardButton(text="⬅️ Orqaga", callback_data=AdminMenuCallback(section="root").pack())],
+        [
+            InlineKeyboardButton(
+                text="🧹 VACUUM", callback_data=DatabaseActionCallback(action="vacuum").pack()
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text="📈 ANALYZE", callback_data=DatabaseActionCallback(action="analyze").pack()
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text="🧱 REINDEX", callback_data=DatabaseActionCallback(action="reindex").pack()
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text="⚡ To'liq optimizatsiya",
+                callback_data=DatabaseActionCallback(action="optimize").pack(),
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text="🔄 Yangilash", callback_data=DatabaseActionCallback(action="refresh").pack()
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text="⬅️ Orqaga", callback_data=AdminMenuCallback(section="root").pack()
+            )
+        ],
     ]
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
@@ -589,7 +757,11 @@ def build_media_source_type_keyboard() -> InlineKeyboardMarkup:
                 text="👥 Guruh", callback_data=MediaSourceTypeCallback(source_type="gr").pack()
             ),
         ],
-        [InlineKeyboardButton(text="⬅️ Orqaga", callback_data=AdminMenuCallback(section="media_sources").pack())],
+        [
+            InlineKeyboardButton(
+                text="⬅️ Orqaga", callback_data=AdminMenuCallback(section="media_sources").pack()
+            )
+        ],
     ]
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
@@ -602,16 +774,31 @@ def build_media_sources_keyboard(sources: list) -> InlineKeyboardMarkup:
             [
                 InlineKeyboardButton(
                     text=source.title[:48],
-                    callback_data=MediaSourceActionCallback(action="noop", chat_id=source.chat_id).pack(),
+                    callback_data=MediaSourceActionCallback(
+                        action="noop", chat_id=source.chat_id
+                    ).pack(),
                 ),
                 InlineKeyboardButton(
                     text="🗑",
-                    callback_data=MediaSourceActionCallback(action="remove", chat_id=source.chat_id).pack(),
+                    callback_data=MediaSourceActionCallback(
+                        action="remove", chat_id=source.chat_id
+                    ).pack(),
                 ),
             ]
         )
     rows.append(
-        [InlineKeyboardButton(text="➕ Manba qo'shish", callback_data=MediaSourceActionCallback(action="add", chat_id=0).pack())]
+        [
+            InlineKeyboardButton(
+                text="➕ Manba qo'shish",
+                callback_data=MediaSourceActionCallback(action="add", chat_id=0).pack(),
+            )
+        ]
     )
-    rows.append([InlineKeyboardButton(text="⬅️ Orqaga", callback_data=AdminMenuCallback(section="root").pack())])
+    rows.append(
+        [
+            InlineKeyboardButton(
+                text="⬅️ Orqaga", callback_data=AdminMenuCallback(section="root").pack()
+            )
+        ]
+    )
     return InlineKeyboardMarkup(inline_keyboard=rows)

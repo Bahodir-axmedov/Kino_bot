@@ -1,7 +1,10 @@
 from src.repositories.action_log_repository import ActionLogRepository
 from src.repositories.ad_campaign_repository import AdCampaignRepository
 from src.repositories.admin_repository import AdminRepository
-from src.repositories.admin_session_repository import AdminLoginAttemptRepository, AdminSessionRepository
+from src.repositories.admin_session_repository import (
+    AdminLoginAttemptRepository,
+    AdminSessionRepository,
+)
 from src.repositories.backup_record_repository import BackupRecordRepository
 from src.repositories.base import BaseRepository
 from src.repositories.blacklist_repository import BlacklistRepository

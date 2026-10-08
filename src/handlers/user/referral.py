@@ -46,16 +46,18 @@ async def show_referral_screen(
         return
 
     username = await _resolve_bot_username(message, settings)
-    invite_link = (
-        f"https://t.me/{username}?start={message.from_user.id}" if username else "\u2014"
-    )
+    invite_link = f"https://t.me/{username}?start={message.from_user.id}" if username else "\u2014"
     total_rewards = await referral_reward_service.total_rewards_for_user(message.from_user.id)
     history = await referral_reward_service.history_for_user(message.from_user.id)
 
-    recent_lines = "\n".join(
-        f"  \u2022 {format_datetime(reward.granted_at)} \u2014 {reward.reward_type} (+{reward.amount})"
-        for reward in history[:5]
-    ) or "  \u2014"
+    recent_lines = (
+        "\n".join(
+            f"  \u2022 {format_datetime(reward.granted_at)} \u2014 "
+            f"{reward.reward_type} (+{reward.amount})"
+            for reward in history[:5]
+        )
+        or "  \u2014"
+    )
 
     text = (
         "\U0001F91D <b>Referral tizimi</b>\n\n"

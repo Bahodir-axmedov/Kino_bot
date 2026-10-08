@@ -22,10 +22,10 @@ class Page:
         """Return the SQL ``LIMIT`` corresponding to this page."""
         return self.size
 
-    def next(self) -> "Page":
+    def next(self) -> Page:
         """Return the next page."""
         return Page(index=self.index + 1, size=self.size)
 
-    def previous(self) -> "Page":
+    def previous(self) -> Page:
         """Return the previous page, clamped at zero."""
         return Page(index=max(self.index - 1, 0), size=self.size)

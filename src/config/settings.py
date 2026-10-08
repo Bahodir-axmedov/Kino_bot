@@ -109,12 +109,20 @@ class Settings(BaseSettings):
     @property
     def media_channel_ids(self) -> list[int]:
         """Return configured media channel chat ids."""
-        return [int(token) for token in _split_csv(self.media_channel_ids_raw) if token.lstrip("-").isdigit()]
+        return [
+            int(token)
+            for token in _split_csv(self.media_channel_ids_raw)
+            if token.lstrip("-").isdigit()
+        ]
 
     @property
     def media_group_ids(self) -> list[int]:
         """Return configured media group chat ids."""
-        return [int(token) for token in _split_csv(self.media_group_ids_raw) if token.lstrip("-").isdigit()]
+        return [
+            int(token)
+            for token in _split_csv(self.media_group_ids_raw)
+            if token.lstrip("-").isdigit()
+        ]
 
     @property
     def is_sqlite(self) -> bool:

@@ -8,7 +8,7 @@ orchestrates the two so each service keeps a single responsibility.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -38,7 +38,7 @@ class PaymentService:
         status: PaymentStatus = PaymentStatus.PENDING,
     ) -> PaymentRequest:
         """Persist a new payment request (pending for card, approved for stars)."""
-        reviewed_at = datetime.now(timezone.utc) if status is not PaymentStatus.PENDING else None
+        reviewed_at = datetime.now(UTC) if status is not PaymentStatus.PENDING else None
         request = PaymentRequest(
             user_id=user_id,
             method=method,
@@ -77,6 +77,6 @@ class PaymentService:
             raise InvalidInputError("Bu so'rov allaqachon ko'rib chiqilgan.")
         request.status = status
         request.reviewed_by = reviewed_by
-        request.reviewed_at = datetime.now(timezone.utc)
+        request.reviewed_at = datetime.now(UTC)
         await self._repository.flush()
         return request

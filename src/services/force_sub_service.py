@@ -48,7 +48,7 @@ class ForceSubService:
 
     async def list_all(self) -> list[ForceSubChannel]:
         """Return every configured subscription target (mandatory + optional)."""
-        return list(await self._repository.list_all())
+        return list(await self._repository.list_ordered())
 
     async def add_telegram_channel(
         self,
@@ -148,6 +148,11 @@ class ForceSubService:
         API to check live at all, so they still rely on (and cache) the
         user's own manual "Tasdiqlash" confirmation.
         """
+        if channel.chat_id is None:
+            # A Telegram target with no resolvable chat id can never be
+            # auto-verified; fail closed (treat as not subscribed) instead of
+            # passing ``None`` to get_chat_member.
+            return False
         if channel.platform in TELEGRAM_AUTO_VERIFIABLE_PLATFORMS:
             try:
                 member = await bot.get_chat_member(chat_id=channel.chat_id, user_id=telegram_id)

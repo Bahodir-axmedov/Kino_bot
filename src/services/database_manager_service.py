@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from typing import Any
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -42,7 +43,7 @@ class DatabaseManagerService:
         """Resolve the on-disk SQLite file path from ``DATABASE_URL``."""
         return self._settings.database_url.split("///")[-1]
 
-    async def _scalar(self, sql: str) -> object:
+    async def _scalar(self, sql: str) -> Any:
         """Execute a raw scalar-returning SQL/PRAGMA statement."""
         result = await self._session.execute(text(sql))
         return result.scalar()

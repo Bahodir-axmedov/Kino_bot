@@ -9,6 +9,8 @@ payment approval queue (approve -> grant Premium, reject -> notify user).
 
 from __future__ import annotations
 
+import contextlib
+
 from aiogram import F, Router
 from aiogram.exceptions import TelegramAPIError
 from aiogram.types import CallbackQuery, Message
@@ -41,13 +43,16 @@ async def _summary_text(settings_service: SettingsService, pending_count: int) -
     card_number = str(await settings_service.get("payment_card_number") or "\u2014")
     card_holder = str(await settings_service.get("payment_card_holder") or "\u2014")
     card_bank = str(await settings_service.get("payment_card_bank") or "\u2014")
+    state_text = "\u2705 yoqilgan" if enabled else "\u274C o\u2018chirilgan"
+    stars_mark = "\u2705" if stars_enabled else "\u274C"
+    card_mark = "\u2705" if card_enabled else "\u274C"
     return (
         "\U0001F48E <b>Premium markazi</b>\n\n"
-        f"Holat: {'\u2705 yoqilgan' if enabled else '\u274C o\u2018chirilgan'}\n"
+        f"Holat: {state_text}\n"
         f"\U0001F4E6 Muddat: <b>{days} kun</b>\n\n"
-        f"\u2B50\uFE0F Stars to\u2018lovi: {'\u2705' if stars_enabled else '\u274C'} \u2014 "
+        f"\u2B50\uFE0F Stars to\u2018lovi: {stars_mark} \u2014 "
         f"<b>{stars_price}</b> yulduz\n"
-        f"\U0001F4B3 Karta to\u2018lovi: {'\u2705' if card_enabled else '\u274C'} \u2014 "
+        f"\U0001F4B3 Karta to\u2018lovi: {card_mark} \u2014 "
         f"<b>{format_amount(uzs_price)}</b> so\u2018m\n\n"
         f"\U0001F3E6 Karta ({card_bank}): <code>{card_number}</code>\n"
         f"\U0001F464 Karta egasi: {card_holder}\n\n"
@@ -86,9 +91,7 @@ def _request_caption(request: PaymentRequest) -> str:
 
 
 @router.callback_query(AdminMenuCallback.filter(F.section == "premium_payments"))
-async def list_pending_payments(
-    callback: CallbackQuery, payment_service: PaymentService
-) -> None:
+async def list_pending_payments(callback: CallbackQuery, payment_service: PaymentService) -> None:
     """List up to 10 pending card payments, each with approve/reject buttons."""
     if not isinstance(callback.message, Message) or callback.bot is None:
         await callback.answer()
@@ -112,9 +115,7 @@ async def list_pending_payments(
                 reply_markup=keyboard,
             )
         else:
-            await callback.bot.send_message(
-                chat_id=chat_id, text=caption, reply_markup=keyboard
-            )
+            await callback.bot.send_message(chat_id=chat_id, text=caption, reply_markup=keyboard)
     await callback.answer()
 
 
@@ -151,7 +152,7 @@ async def approve_payment(
         new_value={"user_id": request.user_id, "days": request.days},
     )
     if callback.bot is not None:
-        try:
+        with contextlib.suppress(TelegramAPIError):  # pragma: no cover - best effort notify
             await callback.bot.send_message(
                 chat_id=request.user_id,
                 text=(
@@ -159,8 +160,6 @@ async def approve_payment(
                     "faollashtirildi. Rahmat! \u2B50\uFE0F"
                 ),
             )
-        except TelegramAPIError:  # pragma: no cover - best effort notify
-            pass
     await _mark_review_done(callback, "\u2705 <b>Tasdiqlandi</b>")
     await callback.answer("\u2705 Tasdiqlandi")
 
@@ -189,7 +188,7 @@ async def reject_payment(
         entity_id=str(request.id),
     )
     if callback.bot is not None:
-        try:
+        with contextlib.suppress(TelegramAPIError):  # pragma: no cover - best effort notify
             await callback.bot.send_message(
                 chat_id=request.user_id,
                 text=(
@@ -198,8 +197,6 @@ async def reject_payment(
                     "administrator bilan bog\u2018laning."
                 ),
             )
-        except TelegramAPIError:  # pragma: no cover - best effort notify
-            pass
     await _mark_review_done(callback, "\u274C <b>Rad etildi</b>")
     await callback.answer("\u274C Rad etildi")
 

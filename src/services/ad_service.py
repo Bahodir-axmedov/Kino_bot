@@ -80,7 +80,10 @@ class AdService:
         if search_count <= 0:
             return None
         for campaign in await self._repository.list_active_now():
-            if campaign.trigger_every_n_searches > 0 and search_count % campaign.trigger_every_n_searches == 0:
+            if (
+                campaign.trigger_every_n_searches > 0
+                and search_count % campaign.trigger_every_n_searches == 0
+            ):
                 campaign.impressions_count += 1
                 await self._repository.flush()
                 return campaign

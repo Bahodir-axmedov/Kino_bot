@@ -34,7 +34,12 @@ class MediaCollectionService:
         return await self._repository.list_ordered(active_only=active_only)
 
     async def create(
-        self, *, name: str, icon: str | None = None, description: str | None = None, created_by: int | None = None
+        self,
+        *,
+        name: str,
+        icon: str | None = None,
+        description: str | None = None,
+        created_by: int | None = None,
     ) -> MediaCollection:
         """Create a new collection, appended to the end of the display order."""
         slug = slugify(name)
@@ -42,7 +47,12 @@ class MediaCollectionService:
             raise InvalidInputError(f"'{name}' nomli Collection allaqachon mavjud.")
         position = await self._repository.max_position()
         collection = MediaCollection(
-            name=name.strip(), slug=slug, icon=icon, description=description, position=position, created_by=created_by
+            name=name.strip(),
+            slug=slug,
+            icon=icon,
+            description=description,
+            position=position,
+            created_by=created_by,
         )
         return await self._repository.add(collection)
 

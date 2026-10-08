@@ -52,11 +52,12 @@ async def restore_from_upload(
     if message.document is None or message.bot is None:
         return
 
-    from pathlib import Path
     import tempfile
+    from pathlib import Path
 
+    file_name = message.document.file_name or "restored_backup.sqlite3"
     with tempfile.TemporaryDirectory() as tmp_dir:
-        local_path = Path(tmp_dir) / message.document.file_name
+        local_path = Path(tmp_dir) / file_name
         await message.bot.download(message.document, destination=local_path)
         try:
             backup_service.restore_backup(local_path)

@@ -43,7 +43,7 @@ class Broadcast(TimestampMixin, BigIntPrimaryKeyMixin, Base):
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    failed_users: Mapped[list["BroadcastFailedUser"]] = relationship(
+    failed_users: Mapped[list[BroadcastFailedUser]] = relationship(
         "BroadcastFailedUser", back_populates="broadcast", cascade="all, delete-orphan"
     )
 
@@ -60,4 +60,4 @@ class BroadcastFailedUser(TimestampMixin, BigIntPrimaryKeyMixin, Base):
     error_message: Mapped[str] = mapped_column(Text, nullable=False)
     retried: Mapped[bool] = mapped_column(Integer, nullable=False, default=0)
 
-    broadcast: Mapped["Broadcast"] = relationship("Broadcast", back_populates="failed_users")
+    broadcast: Mapped[Broadcast] = relationship("Broadcast", back_populates="failed_users")
